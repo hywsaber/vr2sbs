@@ -1,54 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/launcher_background"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingStart="@dimen/launcher_screen_padding"
+    android:paddingTop="@dimen/launcher_screen_padding"
+    android:paddingEnd="@dimen/launcher_screen_padding"
+    android:paddingBottom="@dimen/launcher_screen_padding">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/instructionText"
+            style="@style/TextAppearance.Vr2xr.Setup.Instruction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="@string/tracking_setup_step1" />
+
+        <ImageView
+            android:id="@+id/setupGlassesIcon"
+            android:layout_width="@dimen/setup_glasses_icon_size"
+            android:layout_height="@dimen/setup_glasses_icon_size"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/setup_glasses_icon_top_margin"
+            android:contentDescription="@string/xreal_status_icon_content_description"
+            android:src="@drawable/ic_glasses_status" />
+
+        <TextView
+            android:id="@+id/statusText"
+            style="@style/TextAppearance.Vr2xr.Setup.Status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/setup_status_top_margin"
+            android:gravity="center_horizontal"
+            android:text="@string/tracking_setup_idle" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/setup_button_top_margin">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/runCalibrationButton"
+                style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/run_calibration" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/calibrationProgressIndicator"
+                android:layout_width="@dimen/setup_button_indicator_size"
+                android:layout_height="@dimen/setup_button_indicator_size"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="@dimen/setup_button_indicator_margin_start"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/catppuccin_mocha_mantle"
+                app:indicatorSize="@dimen/setup_button_indicator_size"
+                app:trackThickness="@dimen/setup_button_indicator_thickness"
+                app:trackColor="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/calibrationCheckMark"
+                android:layout_width="@dimen/setup_button_indicator_size"
+                android:layout_height="@dimen/setup_button_indicator_size"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="@dimen/setup_button_indicator_margin_start"
+                android:gravity="center"
+                android:text="@string/tracking_setup_checkmark"
+                android:textColor="@color/catppuccin_mocha_mantle"
+                android:textSize="@dimen/setup_checkmark_text_size"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/titleText"
+        android:id="@+id/footerText"
+        style="@style/TextAppearance.Vr2xr.Launcher.Footer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/tracking_setup_title"
-        android:textAppearance="?attr/textAppearanceTitleLarge" />
-
-    <TextView
-        android:id="@+id/instructionText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/tracking_setup_step1"
-        android:textAppearance="?attr/textAppearanceBodyLarge" />
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/tracking_setup_idle"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-    <Button
-        android:id="@+id/runCalibrationButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:text="@string/run_calibration" />
-
-    <Button
-        android:id="@+id/zeroViewButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:enabled="false"
-        android:text="@string/zero_view" />
-
-    <Button
-        android:id="@+id/continueButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:enabled="false"
-        android:text="@string/continue_to_player" />
-
+        android:layout_marginTop="@dimen/launcher_footer_top_margin"
+        android:gravity="center_horizontal"
+        android:text="@string/footer_designed_with" />
 </LinearLayout>
