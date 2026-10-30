@@ -3,7 +3,7 @@ package com.vr2xr.app
 import com.vr2xr.render.ProjectionMode
 
 object ProjectionFovConfig {
-    const val DEFAULT_DEGREES = 95f
+    const val DEFAULT_DEGREES = 58f
     const val MIN_DEGREES = 25f
     const val MAX_DEGREES = 175f
     const val STEP_DEGREES = 5f
@@ -11,7 +11,6 @@ object ProjectionFovConfig {
     const val MIN_FISHEYE_SOURCE_FOV_DEGREES = 160f
     const val MAX_FISHEYE_SOURCE_FOV_DEGREES = 220f
     const val PREFERENCES_FILE = "projection_settings"
-    const val PREFERENCE_KEY_FOV_DEGREES = "fov_degrees"
     const val PREFERENCE_KEY_PROJECTION_MODE = "projection_mode"
     const val PREFERENCE_KEY_FISHEYE_SOURCE_FOV_DEGREES = "fisheye_source_fov_degrees"
 

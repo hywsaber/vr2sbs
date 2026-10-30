@@ -6,6 +6,58 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.2.1 release notes
+
+This version is based on [NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo). It focuses on improving compatibility with SBS output devices, adjusting the default viewing FOV, and allowing IMU head tracking to be disabled when needed. Upstream features such as SMB2/SMB3 playback, VR180 fisheye projections, and touchpad view controls are unchanged and are not listed again.
+
+### New features
+
+#### Selectable SBS output (Half-SBS / Full-SBS)
+
+- Projection Settings adds an **SBS Output** control.
+- **Half-SBS**: outputs 1920×1080 (960×1080 per eye), for USB/adapter links that only support 1080p.
+- **Full-SBS**: outputs 3840×1080 (1920×1080 per eye).
+- Switching while playing automatically rebuilds the glasses output without leaving playback; the choice is saved automatically.
+
+#### Half-SBS forced 1080p rendering
+
+Even when the glasses report a 3840×1080 display mode, Half-SBS is rendered as a true half-width SBS frame at 1920×1080, so it is not mistaken for Full-SBS output.
+
+#### Automatic external display-mode matching
+
+The app selects a display mode with the same resolution as the chosen output format and prefers the current refresh rate, reducing visual jumps when switching formats.
+
+#### Optional IMU tracking
+
+- The calibration screen adds **Disable IMU Tracking**: when head tracking is not needed or calibration cannot be completed, calibration can be skipped and playback can start directly.
+- The toggle is saved across screens and applies consistently in the launcher, SMB browser, and player.
+- It can be re-enabled at any time in the player's glasses settings: calibration runs first, then playback resumes from the same source.
+- With IMU disabled, **Recenter** resets the touchpad view offset.
+
+#### Separate installation identity
+
+- The app name is **vr2sbs**; the icon is unchanged.
+- The applicationId is `com.vr2sbs`, so the app can be installed alongside the original vr2xr-neo without replacing it.
+
+### Fixes and improvements
+
+- Fixed unreadable text caused by the selected SBS option's text and background being the same color in Projection Settings.
+- Unified the font size of Half-SBS, Full-SBS, and “Reset default FOV (58°)” with the other projection options.
+- Renamed “Half Equirectangular (VR180)” to “VR180 to SBS” to match the new SBS output options.
+- The default View FOV per playback is now 58° (previously 95°); during playback, real-time adjustment from 25° to 175°, 5° steps, pinch, drag, and double-tap recenter remain available.
+- The current View FOV is preserved after the UI is recreated or rotated.
+- Added/updated unit tests: SBS output format and display-mode selection, IMU tracking launch policy, and default FOV configuration.
+
+### Installation and compatibility
+
+- versionName `0.2.1`, versionCode `1`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Can be installed alongside other vr2xr versions; each version stores its settings independently, and SMB profiles and projection settings from older versions are not migrated automatically.
+
+### Known issue
+
+- Some sources still appear to have lower resolution in the right half on the glasses. This is under investigation; this version does not change the related display/external output path.
+
 **vr2xr Neo is an Android VR SBS video player for XREAL One and XREAL One Pro glasses.** It supports local files, HTTP(S) URLs, Android share intents, and SMB2/SMB3 network shares, with phone controls and IMU head tracking.
 
 This repository is a maintained fork of [Skarian/vr2xr](https://github.com/skarian/vr2xr). The original project and author are credited below; the fork-specific improvements are highlighted in [What this fork adds](#what-this-fork-adds).
@@ -52,12 +104,13 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 
 ## Features
 
-- **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle
+- **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle that can skip calibration when disabled
 - **Multiple video sources**: Local files, `http(s)` URLs, Android share intents, and built-in SMB2/SMB3 network shares
 - **SMB media browser**: Browse folders, show video thumbnails, sort by modification date, and remember multiple server profiles
 - **High-throughput SMB playback**: Native `libsmb2` random-access reading and seeking, with a `jcifs-ng` compatibility fallback
-- **Multiple VR180 projections**: Half equirectangular, fisheye equidistant, and fisheye equisolid projection
-- **Live projection tuning**: Change view FOV and fisheye lens FOV while playing; settings are saved locally
+- **Multiple VR180 projections**: VR180 to SBS (half equirectangular), fisheye equidistant, and fisheye equisolid projection
+- **SBS output options**: Switch between Half-SBS (1920×1080) and Full-SBS (3840×1080) output while playing
+- **Live projection tuning**: Change view FOV and fisheye lens FOV while playing; the projection mode and SBS output format are remembered, and the view FOV starts at 58° for each playback
 - **Phone playback controls**: Play/pause, 15-second seek, timeline scrubbing, projection controls, and a touchpad for view adjustment
 - **Guided tracking setup**: Automatic calibration entry when needed, followed by an optional Full SBS reminder
 - **Durable playback sessions**: Playback pauses when glasses output disappears and can resume after the output returns
@@ -67,6 +120,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 - XREAL One or XREAL One Pro glasses
 - Android 13 or newer (`minSdk = 33`)
 - Samsung DeX desktop mode is not supported; use screen mirroring instead
+- The app installs as **vr2sbs** (`com.vr2sbs`) and can be installed alongside the original vr2xr-neo app
 
 Phone-only playback is intentionally unsupported. The app does not switch the glasses into SBS mode; that setting remains under user/device control.
 
@@ -78,8 +132,8 @@ Phone-only playback is intentionally unsupported. The app does not switch the gl
    - enter an `http(s)` URL and tap **Open URL**;
    - tap **Open SMB share** for a network share; or
    - share a video link/file to vr2xr from another Android app.
-3. If calibration is required, place the glasses on a flat surface and tap **Run Calibration**.
-4. Put the glasses back on and set `Display > 3D Mode` to `Full SBS`. The reminder can be hidden for future launches.
+3. If calibration is required, place the glasses on a flat surface and tap **Run Calibration**. If head tracking is not needed, tap **Disable IMU Tracking** to skip calibration.
+4. Put the glasses back on and set `Display > 3D Mode` to match the app's **SBS Output** setting (`Full SBS` or `Half SBS`). The reminder can be hidden for future launches.
 5. Tap **Continue to VR Player**. The app applies Zero View automatically.
 6. Use the phone controls to play, pause, seek, adjust projection, and change the view.
 
@@ -91,7 +145,7 @@ If the glasses are disconnected during playback, the video pauses and waits for 
 - **Two-finger pinch**: Change the view FOV continuously
 - **Double-tap**: Recenter the view
 - **FOV - / FOV +**: Change view FOV in 5° steps
-- **Glasses settings**: Recalibrate, change IMU sensitivity, or disable/enable IMU tracking
+- **Glasses settings**: Recalibrate, change IMU sensitivity, or disable/enable IMU tracking (re-enabling runs calibration first)
 - **Projection settings**: Select the projection model and tune view/lens FOV
 - **Playback row**: Seek backward/forward 15 seconds, play/pause, or scrub the timeline
 

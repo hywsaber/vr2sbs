@@ -45,12 +45,17 @@ class TrackingSetupActivity : AppCompatActivity() {
         }
     }
 
+    private val resumeExisting: Boolean by lazy {
+        intent.getBooleanExtra(PlayerActivity.EXTRA_RESUME_EXISTING, false)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTrackingSetupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.runCalibrationButton.setOnClickListener { runCalibration() }
+        binding.disableImuTrackingButton.setOnClickListener { disableImuTracking() }
         renderSessionState(XrSessionState.Idle)
     }
 
@@ -105,6 +110,9 @@ class TrackingSetupActivity : AppCompatActivity() {
             if (currentSessionState is XrSessionState.Streaming) {
                 trackingManager.recalibrate()
                     .onFailure { error ->
+                        if (readyPageLaunched) {
+                            return@onFailure
+                        }
                         calibrationStartedByUser = false
                         calibrationProgressObserved = false
                         errors.show(getString(R.string.tracking_action_failed, error.message ?: "recalibration failed"))
@@ -113,6 +121,9 @@ class TrackingSetupActivity : AppCompatActivity() {
             } else {
                 trackingManager.runCalibration()
                     .onFailure { error ->
+                        if (readyPageLaunched) {
+                            return@onFailure
+                        }
                         calibrationStartedByUser = false
                         calibrationProgressObserved = false
                         errors.show(getString(R.string.tracking_action_failed, error.message ?: "calibration failed"))
@@ -120,6 +131,21 @@ class TrackingSetupActivity : AppCompatActivity() {
                     }
             }
         }
+    }
+
+    /**
+     * Lets the user continue without IMU head tracking when the glasses cannot
+     * be calibrated on this device. The preference is shared with the player's
+     * glasses settings, where tracking can be re-enabled later.
+     */
+    private fun disableImuTracking() {
+        if (readyPageLaunched) {
+            return
+        }
+        ImuTrackingSettings.setEnabled(this, false)
+        binding.disableImuTrackingButton.isEnabled = false
+        binding.runCalibrationButton.isEnabled = false
+        launchCompletionStep()
     }
 
     private fun launchCompletionStep() {
@@ -140,6 +166,7 @@ class TrackingSetupActivity : AppCompatActivity() {
                 startActivity(
                     Intent(this, TrackingReadyActivity::class.java)
                         .putExtra(PlayerActivity.EXTRA_SOURCE, resolvedSource)
+                        .putExtra(PlayerActivity.EXTRA_RESUME_EXISTING, resumeExisting)
                 )
             }
         }

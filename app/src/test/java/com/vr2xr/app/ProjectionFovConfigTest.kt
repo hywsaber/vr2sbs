@@ -6,6 +6,11 @@ import org.junit.Test
 
 class ProjectionFovConfigTest {
     @Test
+    fun defaultFovMatchesRequestedPlaybackDefault() {
+        assertEquals(58f, ProjectionFovConfig.DEFAULT_DEGREES, EPSILON)
+    }
+
+    @Test
     fun clampDegreesLimitsToConfiguredRange() {
         assertEquals(ProjectionFovConfig.MIN_DEGREES, ProjectionFovConfig.clampDegrees(-100f), EPSILON)
         assertEquals(ProjectionFovConfig.MAX_DEGREES, ProjectionFovConfig.clampDegrees(1000f), EPSILON)

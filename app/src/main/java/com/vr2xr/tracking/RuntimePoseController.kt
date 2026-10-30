@@ -11,10 +11,11 @@ data class TouchpadBias(
 class RuntimePoseController(
     initialSensitivity: Float,
     private val minSensitivity: Float = MIN_IMU_SENSITIVITY,
-    private val maxSensitivity: Float = MAX_IMU_SENSITIVITY
+    private val maxSensitivity: Float = MAX_IMU_SENSITIVITY,
+    initialImuTrackingEnabled: Boolean = true
 ) {
     private var imuSensitivity = initialSensitivity.coerceIn(minSensitivity, maxSensitivity)
-    private var imuTrackingEnabled = true
+    private var imuTrackingEnabled = initialImuTrackingEnabled
     private var latestTrackingPose = PoseState()
     private var latestScaledImuPose = scalePose(latestTrackingPose)
     private var frozenImuPose = latestScaledImuPose

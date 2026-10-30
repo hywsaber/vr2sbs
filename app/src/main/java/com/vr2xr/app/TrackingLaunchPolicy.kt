@@ -7,8 +7,11 @@ internal enum class TrackingSetupCompletionTarget {
     READY
 }
 
-internal fun shouldLaunchTrackingSetupForSource(sessionState: XrSessionState): Boolean {
-    return sessionState !is XrSessionState.Streaming
+internal fun shouldLaunchTrackingSetupForSource(
+    sessionState: XrSessionState,
+    imuTrackingEnabled: Boolean = true
+): Boolean {
+    return imuTrackingEnabled && sessionState !is XrSessionState.Streaming
 }
 
 internal fun trackingSetupCompletionTarget(hasSource: Boolean): TrackingSetupCompletionTarget {

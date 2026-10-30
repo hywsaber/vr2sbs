@@ -140,6 +140,10 @@ class VrSbsRenderer(
         val leftEyeWidth = halfWidth.coerceAtLeast(1)
         val rightEyeWidth = (outputWidth - halfWidth).coerceAtLeast(1)
         val safeHeight = outputHeight.coerceAtLeast(1)
+        // Half-SBS packs each eye into half the frame width and the glasses stretch it back.
+        // Keep the full per-eye aspect for the projection so the un-squeeze preserves geometry.
+        val leftAspectWidth = if (mode.packedHalfSbs) outputWidth else leftEyeWidth
+        val rightAspectWidth = if (mode.packedHalfSbs) outputWidth else rightEyeWidth
         val halfConvergenceRadians = Math.toRadians(mode.convergenceDegrees.toDouble()).toFloat() * 0.5f
         val tanHalfFovY = tan(Math.toRadians((mode.perEyeFovDegrees * 0.5f).toDouble())).toFloat()
         val fisheyeSourceFovDegrees = if (mode.fisheyeSourceFovDegrees.isFinite()) {
@@ -155,7 +159,7 @@ class VrSbsRenderer(
         GLES20.glUniform1f(texOffsetHandle, if (mode.swapEyes) 0.5f else 0f)
         GLES20.glUniform1f(eyeYawOffsetHandle, halfConvergenceRadians)
         GLES20.glUniform1f(tanHalfFovYHandle, tanHalfFovY)
-        GLES20.glUniform1f(tanHalfFovXHandle, tanHalfFovY * (leftEyeWidth.toFloat() / safeHeight.toFloat()))
+        GLES20.glUniform1f(tanHalfFovXHandle, tanHalfFovY * (leftAspectWidth.toFloat() / safeHeight.toFloat()))
         GLES20.glUniform1f(fisheyeHalfFovHandle, fisheyeHalfFovRadians)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
@@ -165,7 +169,7 @@ class VrSbsRenderer(
         GLES20.glUniform1f(texOffsetHandle, if (mode.swapEyes) 0f else 0.5f)
         GLES20.glUniform1f(eyeYawOffsetHandle, -halfConvergenceRadians)
         GLES20.glUniform1f(tanHalfFovYHandle, tanHalfFovY)
-        GLES20.glUniform1f(tanHalfFovXHandle, tanHalfFovY * (rightEyeWidth.toFloat() / safeHeight.toFloat()))
+        GLES20.glUniform1f(tanHalfFovXHandle, tanHalfFovY * (rightAspectWidth.toFloat() / safeHeight.toFloat()))
         GLES20.glUniform1f(fisheyeHalfFovHandle, fisheyeHalfFovRadians)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
@@ -204,8 +208,9 @@ data class RenderMode(
     val projectionMode: ProjectionMode = ProjectionMode.VR180,
     val swapEyes: Boolean = false,
     val convergenceDegrees: Float = 0f,
-    val perEyeFovDegrees: Float = 95f,
-    val fisheyeSourceFovDegrees: Float = DEFAULT_FISHEYE_SOURCE_FOV_DEGREES
+    val perEyeFovDegrees: Float = 58f,
+    val fisheyeSourceFovDegrees: Float = DEFAULT_FISHEYE_SOURCE_FOV_DEGREES,
+    val packedHalfSbs: Boolean = false
 )
 
 private const val DEFAULT_FISHEYE_SOURCE_FOV_DEGREES = 180f

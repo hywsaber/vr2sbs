@@ -246,7 +246,12 @@ class SmbBrowserActivity : AppCompatActivity() {
                 ).show()
                 return@launch
             }
-            val target = if (shouldLaunchTrackingSetupForSource(trackingManager.sessionState.value)) {
+            val target = if (
+                shouldLaunchTrackingSetupForSource(
+                    trackingManager.sessionState.value,
+                    imuTrackingEnabled = ImuTrackingSettings.isEnabled(this@SmbBrowserActivity)
+                )
+            ) {
                 TrackingSetupActivity::class.java
             } else {
                 TrackingReadyActivity::class.java

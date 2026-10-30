@@ -6,7 +6,7 @@ This runbook adds Google Play internal-track publishing to the existing GitHub t
 
 For each pushed tag matching `v*.*.*`:
 
-- `.github/workflows/release-apk-tag.yml` publishes `vr2xr.apk` to GitHub Releases
+- `.github/workflows/release-apk-tag.yml` publishes `vr2sbs.apk` to GitHub Releases
 - `.github/workflows/release-play-tag.yml` uploads a signed App Bundle to Play `internal` track
 
 Current behavior while the app is in Play draft state: Play uploads are created with release status `draft` by CI.
@@ -153,7 +153,7 @@ git push origin v0.0.2
 3. Validate both Actions runs succeed:
    - `Publish Tagged APK Release`
    - `Publish Tagged Play Release`
-4. Validate GitHub release has `vr2xr.apk`
+4. Validate GitHub release has `vr2sbs.apk`
 5. Validate Play internal release version and notes
 
 ## Versioning Rules

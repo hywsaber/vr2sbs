@@ -21,6 +21,7 @@
     <dimen name="setup_glasses_icon_top_margin">40dp</dimen>
     <dimen name="setup_status_top_margin">22dp</dimen>
     <dimen name="setup_button_top_margin">28dp</dimen>
+    <dimen name="setup_secondary_button_top_margin">14dp</dimen>
     <dimen name="setup_button_indicator_size">14dp</dimen>
     <dimen name="setup_button_indicator_margin_start">16dp</dimen>
     <dimen name="setup_button_indicator_thickness">2dp</dimen>
@@ -49,6 +50,7 @@
     <dimen name="player_dialog_row_min_height">56dp</dimen>
     <dimen name="player_dialog_row_horizontal_padding">16dp</dimen>
     <dimen name="player_dialog_content_padding">18dp</dimen>
+    <dimen name="player_dialog_option_text_size">16sp</dimen>
     <dimen name="player_dialog_corner_radius">24dp</dimen>
     <dimen name="player_dialog_window_inset_horizontal">16dp</dimen>
     <dimen name="player_dialog_window_inset_vertical">16dp</dimen>

@@ -23,6 +23,26 @@ class TrackingLaunchPolicyTest {
     }
 
     @Test
+    fun disabledImuTrackingSkipsTrackingSetup() {
+        assertFalse(
+            shouldLaunchTrackingSetupForSource(
+                XrSessionState.Idle,
+                imuTrackingEnabled = false
+            )
+        )
+    }
+
+    @Test
+    fun disabledImuTrackingStillSkipsSetupWhenStreaming() {
+        assertFalse(
+            shouldLaunchTrackingSetupForSource(
+                XrSessionState.Streaming(connectionInfo()),
+                imuTrackingEnabled = false
+            )
+        )
+    }
+
+    @Test
     fun setupWithoutSourceCompletesToMain() {
         assertEquals(
             TrackingSetupCompletionTarget.MAIN,

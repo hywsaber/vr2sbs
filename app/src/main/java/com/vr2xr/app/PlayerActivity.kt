@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import android.view.Display
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -21,6 +22,7 @@ import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -79,10 +81,11 @@ class PlayerActivity : AppCompatActivity() {
     private var externalPresentationModeSignature: DisplayModeSignature? = null
     private var externalPresentationToken: Long = 0L
     private var latestPose: PoseState = PoseState()
-    private val runtimePoseController = RuntimePoseController(initialSensitivity = DEFAULT_IMU_SENSITIVITY)
+    private lateinit var runtimePoseController: RuntimePoseController
     private var trackingSummary: String = ""
 
     private var renderMode = RenderMode(perEyeFovDegrees = ProjectionFovConfig.DEFAULT_DEGREES)
+    private var sbsOutputFormat = SbsOutputFormat.FULL
     private val errors by lazy { ErrorUiController(this) }
     private val projectionSettingsPreferences by lazy {
         getSharedPreferences(ProjectionFovConfig.PREFERENCES_FILE, MODE_PRIVATE)
@@ -137,6 +140,11 @@ class PlayerActivity : AppCompatActivity() {
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        runtimePoseController = RuntimePoseController(
+            initialSensitivity = DEFAULT_IMU_SENSITIVITY,
+            initialImuTrackingEnabled = ImuTrackingSettings.isEnabled(this)
+        )
+
         val app = application as Vr2xrApplication
         trackingManager = app.trackingSessionManager
         playbackSession = app.playbackSessionOwner
@@ -167,10 +175,15 @@ class PlayerActivity : AppCompatActivity() {
             finish()
             return
         }
+        val initialFovDegrees = savedInstanceState
+            ?.getFloat(STATE_PER_EYE_FOV_DEGREES, ProjectionFovConfig.DEFAULT_DEGREES)
+            ?: ProjectionFovConfig.DEFAULT_DEGREES
+        sbsOutputFormat = loadPersistedSbsOutputFormat()
         renderMode = renderMode.copy(
             projectionMode = loadPersistedProjectionMode(),
-            perEyeFovDegrees = loadPersistedProjectionFov(),
-            fisheyeSourceFovDegrees = loadPersistedFisheyeSourceFov()
+            perEyeFovDegrees = ProjectionFovConfig.normalizeDegrees(initialFovDegrees),
+            fisheyeSourceFovDegrees = loadPersistedFisheyeSourceFov(),
+            packedHalfSbs = sbsOutputFormat == SbsOutputFormat.HALF
         )
 
         decoderSummary = CodecCapabilityProbe().findHevcDecoderSummary()
@@ -273,6 +286,11 @@ class PlayerActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putFloat(STATE_PER_EYE_FOV_DEGREES, renderMode.perEyeFovDegrees)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -293,6 +311,7 @@ class PlayerActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "PlayerActivity"
+        private const val STATE_PER_EYE_FOV_DEGREES = "state_per_eye_fov_degrees"
         const val EXTRA_SOURCE = "extra_source"
         const val EXTRA_RESUME_EXISTING = "extra_resume_existing"
     }
@@ -645,7 +664,11 @@ class PlayerActivity : AppCompatActivity() {
         )
         bindImuTrackingToggle(
             toggle = dialogBinding.imuTrackingSwitch,
-            row = dialogBinding.imuTrackingRow
+            row = dialogBinding.imuTrackingRow,
+            onEnableRequested = {
+                dialog.dismiss()
+                launchCalibrationSetup()
+            }
         )
 
         dialogBinding.runCalibrationButton.setOnClickListener {
@@ -673,14 +696,35 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun bindImuTrackingToggle(
         toggle: SwitchMaterial,
-        row: View
+        row: View,
+        onEnableRequested: () -> Unit
     ) {
         toggle.setOnCheckedChangeListener(null)
         toggle.isChecked = runtimePoseController.isImuTrackingEnabled()
         row.setOnClickListener { toggle.toggle() }
         toggle.setOnCheckedChangeListener { _, isChecked ->
-            applyRuntimePose(runtimePoseController.setImuTrackingEnabled(isChecked))
+            ImuTrackingSettings.setEnabled(this, isChecked)
+            if (isChecked) {
+                onEnableRequested()
+            } else {
+                applyRuntimePose(runtimePoseController.setImuTrackingEnabled(false))
+            }
         }
+    }
+
+    /**
+     * Enabling IMU tracking requires the calibration screen again. The active
+     * playback session is preserved so the player can resume the same source.
+     */
+    private fun launchCalibrationSetup() {
+        val source = playbackSession.state.value.source ?: launchRequest.source
+        val intent = Intent(this, TrackingSetupActivity::class.java)
+            .putExtra(PlayerActivity.EXTRA_RESUME_EXISTING, true)
+        if (source != null) {
+            intent.putExtra(PlayerActivity.EXTRA_SOURCE, source)
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun showProjectionSettingsPopup() {
@@ -692,6 +736,7 @@ class PlayerActivity : AppCompatActivity() {
             applyProjectionMode(projectionModeForCheckedId(checkedId))
             updateFisheyeSourceFovVisibility(dialogBinding)
         }
+        bindSbsOutputFormatGroup(dialogBinding.projectionSbsFormatGroup)
         bindProjectionFovSlider(
             slider = dialogBinding.projectionFovSlider,
             valueLabel = dialogBinding.projectionFovValueText
@@ -763,6 +808,28 @@ class PlayerActivity : AppCompatActivity() {
             if (isFisheyeProjectionMode(renderMode.projectionMode)) View.VISIBLE else View.GONE
     }
 
+    private fun bindSbsOutputFormatGroup(group: MaterialButtonToggleGroup) {
+        group.clearOnButtonCheckedListeners()
+        group.check(
+            if (sbsOutputFormat == SbsOutputFormat.HALF) {
+                R.id.projectionSbsHalfOption
+            } else {
+                R.id.projectionSbsFullOption
+            }
+        )
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) {
+                return@addOnButtonCheckedListener
+            }
+            val format = if (checkedId == R.id.projectionSbsHalfOption) {
+                SbsOutputFormat.HALF
+            } else {
+                SbsOutputFormat.FULL
+            }
+            applySbsOutputFormat(format)
+        }
+    }
+
     private fun bindProjectionFovSlider(slider: Slider, valueLabel: TextView) {
         val currentFov = ProjectionFovConfig.normalizeDegrees(renderMode.perEyeFovDegrees)
         projectionFovSliderOnChangeCount = 0
@@ -816,15 +883,16 @@ class PlayerActivity : AppCompatActivity() {
         Log.i(TAG, "Projection FOV adjusted from player controls to $updatedValue")
     }
 
-    private fun loadPersistedProjectionFov(): Float {
-        val storedValue = projectionSettingsPreferences.getFloat(
-            ProjectionFovConfig.PREFERENCE_KEY_FOV_DEGREES,
-            ProjectionFovConfig.DEFAULT_DEGREES
+    private fun loadPersistedSbsOutputFormat(): SbsOutputFormat {
+        val storedValue = projectionSettingsPreferences.getString(
+            SbsOutputFormat.PREFERENCE_KEY_SBS_OUTPUT_FORMAT,
+            null
         )
-        val normalizedValue = ProjectionFovConfig.normalizeDegrees(storedValue)
-        if (storedValue != normalizedValue) {
+        val normalizedValue = SbsOutputFormat.fromPreference(storedValue)
+        val normalizedPreference = SbsOutputFormat.toPreference(normalizedValue)
+        if (storedValue != normalizedPreference) {
             projectionSettingsPreferences.edit()
-                .putFloat(ProjectionFovConfig.PREFERENCE_KEY_FOV_DEGREES, normalizedValue)
+                .putString(SbsOutputFormat.PREFERENCE_KEY_SBS_OUTPUT_FORMAT, normalizedPreference)
                 .apply()
         }
         return normalizedValue
@@ -881,9 +949,26 @@ class PlayerActivity : AppCompatActivity() {
         }
         renderMode = renderMode.copy(perEyeFovDegrees = normalizedValue)
         applyRenderModeToRenderers()
+    }
+
+    private fun applySbsOutputFormat(format: SbsOutputFormat) {
+        if (sbsOutputFormat == format) {
+            return
+        }
+        sbsOutputFormat = format
+        renderMode = renderMode.copy(packedHalfSbs = format == SbsOutputFormat.HALF)
         projectionSettingsPreferences.edit()
-            .putFloat(ProjectionFovConfig.PREFERENCE_KEY_FOV_DEGREES, normalizedValue)
+            .putString(
+                SbsOutputFormat.PREFERENCE_KEY_SBS_OUTPUT_FORMAT,
+                SbsOutputFormat.toPreference(format)
+            )
             .apply()
+        applyRenderModeToRenderers()
+        if (externalPresentation != null) {
+            dismissExternalPresentation()
+            syncExternalPresentation()
+        }
+        Log.i(TAG, "SBS output format changed to $format")
     }
 
     private fun applyFisheyeSourceFov(value: Float) {
@@ -1045,6 +1130,21 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun preferredSbsDisplayModeId(display: Display): Int? {
+        return selectSbsDisplayModeId(
+            format = sbsOutputFormat,
+            currentRefreshRateHz = display.mode.refreshRate,
+            modes = display.supportedModes.map { mode ->
+                DisplayModeCandidate(
+                    modeId = mode.modeId,
+                    widthPixels = mode.physicalWidth,
+                    heightPixels = mode.physicalHeight,
+                    refreshRateHz = mode.refreshRate
+                )
+            }
+        )
+    }
+
     private fun syncExternalPresentation() {
         if (!canProcessRouting("sync-external-presentation")) {
             return
@@ -1071,10 +1171,20 @@ class PlayerActivity : AppCompatActivity() {
 
         dismissExternalPresentation()
         val token = ++externalPresentationToken
+        val preferredModeId = preferredSbsDisplayModeId(display)
+        val forcedSurfaceWidth = sbsOutputFormat.forcedRenderWidthPixels()
+        val forcedSurfaceHeight = if (forcedSurfaceWidth != null) {
+            SbsOutputFormat.OUTPUT_HEIGHT_PIXELS
+        } else {
+            null
+        }
         runCatching {
             ExternalGlPresentation(
                 context = this,
                 display = display,
+                preferredDisplayModeId = preferredModeId,
+                forcedSurfaceWidthPixels = forcedSurfaceWidth,
+                forcedSurfaceHeightPixels = forcedSurfaceHeight,
                 listener = object : ExternalGlPresentation.Listener {
                     override fun onVideoSurfaceReady(surface: Surface) {
                         runOnUiThread {
@@ -1327,6 +1437,11 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun runRecenter() {
+        if (!runtimePoseController.isImuTrackingEnabled()) {
+            applyRuntimePose(runtimePoseController.resetTouchpadBias())
+            resetTouchpadIndicator(animate = false)
+            return
+        }
         if (latestSessionState !is XrSessionState.Streaming) {
             errors.show(getString(R.string.tracking_recenter_requires_streaming))
             return

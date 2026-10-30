@@ -5,7 +5,7 @@ plugins {
     id("com.github.triplet.play")
 }
 
-val defaultVersionName = "0.1.0"
+val defaultVersionName = "0.2.1"
 val defaultVersionCode = 1
 
 val releaseVersionName = System.getenv("VR2XR_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
@@ -58,7 +58,9 @@ android {
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "com.vr2xr"
+        // Separate application id so this fork can be installed next to the
+        // original vr2xr app without replacing it.
+        applicationId = "com.vr2sbs"
         minSdk = 33
         targetSdk = 35
         versionCode = releaseVersionCode ?: defaultVersionCode

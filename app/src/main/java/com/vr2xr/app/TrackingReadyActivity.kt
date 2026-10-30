@@ -31,6 +31,10 @@ class TrackingReadyActivity : AppCompatActivity() {
         }
     }
 
+    private val resumeExisting: Boolean by lazy {
+        intent.getBooleanExtra(PlayerActivity.EXTRA_RESUME_EXISTING, false)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTrackingReadyBinding.inflate(layoutInflater)
@@ -67,12 +71,18 @@ class TrackingReadyActivity : AppCompatActivity() {
         maybeSaveSbsReminderPreference()
         setContinueLoading(loading = true)
         continueJob = uiScope.launch {
-            trackingManager.zeroView()
+            val zeroViewResult = if (ImuTrackingSettings.isEnabled(this@TrackingReadyActivity)) {
+                trackingManager.zeroView()
+            } else {
+                Result.success(Unit)
+            }
+            zeroViewResult
                 .onSuccess {
                     val resolvedSource = source ?: return@onSuccess
                     startActivity(
                         Intent(this@TrackingReadyActivity, PlayerActivity::class.java)
                             .putExtra(PlayerActivity.EXTRA_SOURCE, resolvedSource)
+                            .putExtra(PlayerActivity.EXTRA_RESUME_EXISTING, resumeExisting)
                     )
                     finish()
                 }

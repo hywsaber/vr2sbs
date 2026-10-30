@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">vr2xr</string>
+    <string name="app_name">vr2sbs</string>
     <string name="hint_url">https://example.com/video.mp4</string>
     <string name="open_file">Open file</string>
     <string name="open_smb_share">Open SMB share</string>
@@ -9,6 +9,7 @@
     <string name="recenter">Recenter</string>
     <string name="recenter_content_description">Recenter view</string>
     <string name="run_calibration">Run Calibration</string>
+    <string name="disable_imu_tracking">Disable IMU Tracking</string>
     <string name="glasses_settings_title">Glasses Settings</string>
     <string name="glasses_settings_content_description">Open glasses settings</string>
     <string name="projection_settings_title">Projection Settings</string>
@@ -25,19 +26,22 @@
     <string name="imu_sensitivity_default_value">0.9</string>
     <string name="imu_sensitivity_value_format">%1$.1f</string>
     <string name="imu_tracking_toggle_title">Enable IMU Tracking</string>
-    <string name="projection_half_equirectangular_vr180">Half Equirectangular (VR180)</string>
+    <string name="projection_half_equirectangular_vr180">VR180 to SBS</string>
     <string name="projection_fisheye_equidistant_vr180">Fisheye 180 Equidistant</string>
     <string name="projection_fisheye_equisolid_vr180">Fisheye 180 Equisolid</string>
+    <string name="projection_sbs_output_title">SBS Output</string>
+    <string name="projection_sbs_half">Half-SBS</string>
+    <string name="projection_sbs_full">Full-SBS</string>
     <string name="projection_view_fov_title">View FOV</string>
     <string name="projection_lens_fov_title">Lens FOV</string>
-    <string name="projection_fov_default_value">95\u00B0</string>
+    <string name="projection_fov_default_value">58\u00B0</string>
     <string name="projection_lens_fov_default_value">180\u00B0</string>
     <string name="projection_fov_value_format">%1$.0f\u00B0</string>
     <string name="projection_fov_decrease">View FOV -</string>
     <string name="projection_fov_increase">View FOV +</string>
     <string name="projection_fov_decrease_content_description">Decrease view FOV</string>
     <string name="projection_fov_increase_content_description">Increase view FOV</string>
-    <string name="projection_fov_reset_default">Reset default FOV (95\u00B0)</string>
+    <string name="projection_fov_reset_default">Reset default FOV (58\u00B0)</string>
     <string name="status_glasses_required">Select VR SBS content\nafter connecting glasses</string>
     <string name="dex_mode_warning">Samsung DeX is not supported. For best results, turn off DeX and enable screen mirroring so controls stay on phone and video plays in glasses.</string>
     <string name="xreal_status_icon_content_description">XREAL glasses status</string>

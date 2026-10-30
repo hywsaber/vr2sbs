@@ -117,7 +117,12 @@ class MainActivity : AppCompatActivity() {
             val probe = trackingManager.probeConnection()
             renderConnectionStatus(probe)
             if (probe.connected) {
-                if (shouldLaunchTrackingSetupForSource(trackingManager.sessionState.value)) {
+                if (
+                    shouldLaunchTrackingSetupForSource(
+                        trackingManager.sessionState.value,
+                        imuTrackingEnabled = ImuTrackingSettings.isEnabled(this@MainActivity)
+                    )
+                ) {
                     launchTrackingSetup(source)
                 } else {
                     launchTrackingReady(source)
@@ -175,7 +180,12 @@ class MainActivity : AppCompatActivity() {
         ) {
             return
         }
-        if (!shouldLaunchTrackingSetupForSource(trackingManager.sessionState.value)) {
+        if (
+            !shouldLaunchTrackingSetupForSource(
+                trackingManager.sessionState.value,
+                imuTrackingEnabled = ImuTrackingSettings.isEnabled(this)
+            )
+        ) {
             return
         }
         startupCalibrationLaunched = true
