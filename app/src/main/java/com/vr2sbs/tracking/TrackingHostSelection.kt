@@ -10,9 +10,9 @@ internal const val FALLBACK_TRACKING_HOST = "169.254.1.1"
  *
  * XREAL One exposes the same control and stream ports on two USB Ethernet
  * functions: NCM at 169.254.2.1 and ECM at 169.254.1.1. Android normally
- * configures the NCM link, so 169.254.2.1 is the default. Some devices (for
- * example the a tablet) only configure the ECM link, which leaves the
- * default address without a route while 169.254.1.1 works.
+ * configures the NCM link, so 169.254.2.1 is the default. Some devices only
+ * configure the ECM link, which leaves the default address without a route
+ * while 169.254.1.1 works.
  *
  * [linkLocalRouteCidrs] holds the IPv4 routes of every network that owns an
  * IPv4 link-local address. The default address is returned whenever any of

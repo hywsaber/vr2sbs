@@ -144,19 +144,41 @@ Upload `app/build/outputs/bundle/release/app-release.aab` through the Play Conso
 
 ## Per-Release Steps
 
-1. Ensure `main` is in the desired release state
-2. Create and push semantic tag:
+1. Run the public-text privacy check and redact anything it reports:
+
+```bash
+tools/release/check_public_text.sh
+```
+
+2. Ensure `main` is in the desired release state
+3. Create and push semantic tag:
 
 ```bash
 git tag -a v0.0.2 -m "Release v0.0.2"
 git push origin v0.0.2
 ```
 
-3. Validate both Actions runs succeed:
+4. Validate both Actions runs succeed:
    - `Publish Tagged APK Release`
    - `Publish Tagged Play Release`
-4. Validate GitHub release has `vr2sbs.apk`
-5. Validate Play internal release version and notes
+5. Validate GitHub release has `vr2sbs.apk`
+6. Validate Play internal release version and notes
+
+### Privacy check
+
+GitHub and Play release notes are public. Before tagging, also scan the commit messages that the release notes will be generated from:
+
+```bash
+tools/release/check_public_text.sh --commits "$(git describe --tags --abbrev=0)..HEAD"
+```
+
+If you write release notes by hand, scan that file too:
+
+```bash
+tools/release/check_public_text.sh --file path/to/release-notes.md
+```
+
+Do not publish SSIDs, LAN IPs, MAC addresses, device serials, ADB TCP endpoints, or local paths. Use generic descriptions such as "some networks" or "some tablets". Both tag workflows run the working-tree scan automatically before building.
 
 ## Versioning Rules
 
