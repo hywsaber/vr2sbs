@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.openFileButton.setOnClickListener {
-            openDocument.launch(arrayOf("video/*"))
+            openDocument.launch(arrayOf("video/*", "image/*"))
         }
         binding.openSmbShareButton.setOnClickListener {
             startActivity(Intent(this, SmbBrowserActivity::class.java))

@@ -19,6 +19,52 @@ class SmbBrowserPolicyTest {
     }
 
     @Test
+    fun detectsPhotosFromKnownExtensions() {
+        assertTrue(isSmbImage(entry("cover.JPG")))
+        assertTrue(isSmbImage(entry("panorama.heic")))
+        assertFalse(isSmbImage(entry("clip.mp4")))
+        assertFalse(isSmbImage(entry("notes.txt")))
+        assertFalse(isSmbImage(entry("photos", directory = true)))
+        assertTrue(isSmbMedia(entry("cover.webp")))
+        assertTrue(isSmbMedia(entry("clip.webm")))
+        assertFalse(isSmbMedia(entry("notes.txt")))
+    }
+
+    @Test
+    fun keepsPhotosInTheListingAndSortsThemWithVideos() {
+        val entries = listOf(
+            entry("new-photo.jpg", modified = 400L),
+            entry("old-photo.png", modified = 100L),
+            entry("clip.mp4", modified = 300L),
+            entry("ignored.txt")
+        )
+
+        val sorted = sortSmbEntries(entries, SmbSortOrder.NEWEST_FIRST).map { it.name }
+
+        assertEquals(listOf("new-photo.jpg", "clip.mp4", "old-photo.png"), sorted)
+    }
+
+    @Test
+    fun sortsPhotosByResolutionAlongsideVideos() {
+        val entries = listOf(
+            entry("small.jpg"),
+            entry("large.png"),
+            entry("video.mp4")
+        )
+        val metadata = mapOf(
+            "small.jpg" to SmbVideoMetadata(1920, 960, 0L),
+            "large.png" to SmbVideoMetadata(7680, 3840, 0L),
+            "video.mp4" to SmbVideoMetadata(3840, 1920, 60_000L)
+        )
+
+        val sorted = sortSmbEntries(entries, SmbSortOrder.RESOLUTION_DESC) {
+            metadata[it.name]
+        }.map { it.name }
+
+        assertEquals(listOf("large.png", "video.mp4", "small.jpg"), sorted)
+    }
+
+    @Test
     fun sortsDirectoriesBeforeVideosAndFiltersOtherFiles() {
         val entries = listOf(
             entry("old-video.mp4", modified = 100L),

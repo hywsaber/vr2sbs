@@ -26,6 +26,26 @@
             android:orientation="vertical">
 
             <LinearLayout
+                android:id="@+id/smbBookmarksSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/TextAppearance.Vr2sbs.Launcher.Status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/smb_bookmarks_heading" />
+
+                <LinearLayout
+                    android:id="@+id/smbBookmarksContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/smbSavedProfilesContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -144,12 +164,12 @@
         android:orientation="horizontal"
         android:visibility="gone">
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/smbBackButton"
+            android:id="@+id/smbBookmarkButton"
             style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.7"
-            android:text="@string/smb_back" />
+            android:layout_weight="0.9"
+            android:text="@string/smb_bookmark" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/smbSortButton"
             style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"

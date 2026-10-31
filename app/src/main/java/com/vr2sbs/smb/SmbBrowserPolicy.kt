@@ -1,10 +1,8 @@
 package com.vr2sbs.smb
 
+import com.vr2sbs.source.isImageFileName
+import com.vr2sbs.source.isVideoFileName
 import java.util.Locale
-
-private val VIDEO_EXTENSIONS = setOf(
-    "mp4", "m4v", "mkv", "mov", "webm", "ts", "m2ts", "avi"
-)
 
 enum class SmbSortOrder {
     NEWEST_FIRST,
@@ -22,19 +20,20 @@ enum class SmbSortOrder {
     }
 }
 
-fun isSmbVideo(entry: MediaEntry): Boolean {
-    if (entry.directory) return false
-    val extension = entry.name.substringAfterLast('.', missingDelimiterValue = "")
-        .lowercase(Locale.ROOT)
-    return extension in VIDEO_EXTENSIONS
-}
+fun isSmbVideo(entry: MediaEntry): Boolean =
+    !entry.directory && isVideoFileName(entry.name)
+
+fun isSmbImage(entry: MediaEntry): Boolean =
+    !entry.directory && isImageFileName(entry.name)
+
+fun isSmbMedia(entry: MediaEntry): Boolean = isSmbVideo(entry) || isSmbImage(entry)
 
 fun sortSmbEntries(
     entries: List<MediaEntry>,
     order: SmbSortOrder,
     metadata: (MediaEntry) -> SmbVideoMetadata? = { null }
 ): List<MediaEntry> {
-    val visibleEntries = entries.filter { it.directory || isSmbVideo(it) }
+    val visibleEntries = entries.filter { it.directory || isSmbMedia(it) }
     if (visibleEntries.isEmpty()) return emptyList()
     val metadataByUri = if (order.requiresVideoMetadata) {
         visibleEntries.associate { it.uri to metadata(it) }

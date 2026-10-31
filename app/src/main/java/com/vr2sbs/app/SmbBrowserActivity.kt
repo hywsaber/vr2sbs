@@ -16,12 +16,18 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.vr2sbs.R
 import com.vr2sbs.databinding.ActivitySmbBrowserBinding
 import com.vr2sbs.smb.MediaEntry
+import com.vr2sbs.smb.SmbBookmark
 import com.vr2sbs.smb.SmbMediaLoader
 import com.vr2sbs.smb.SmbProfile
 import com.vr2sbs.smb.SmbSortOrder
 import com.vr2sbs.smb.SmbVideoMetadata
+import com.vr2sbs.smb.isSmbImage
+import com.vr2sbs.smb.normalizeSmbBookmarkUri
+import com.vr2sbs.smb.smbFolderAncestors
 import com.vr2sbs.smb.sortSmbEntries
 import com.vr2sbs.source.SourceDescriptor
+import com.vr2sbs.source.SourceMediaKind
+import com.vr2sbs.source.SourcePlaylistItem
 import com.vr2sbs.source.SourceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +42,7 @@ class SmbBrowserActivity : AppCompatActivity() {
     private val app by lazy { application as Vr2sbsApplication }
     private val manager by lazy { app.smbClientManager }
     private val profileStore by lazy { app.smbProfileStore }
+    private val bookmarkStore by lazy { app.smbBookmarkStore }
     private val trackingManager by lazy { app.trackingSessionManager }
     private val browserPreferences by lazy {
         getSharedPreferences(SMB_BROWSER_PREFERENCES, MODE_PRIVATE)
@@ -68,10 +75,11 @@ class SmbBrowserActivity : AppCompatActivity() {
         )
 
         binding.smbConnectButton.setOnClickListener { connectFromForm() }
-        binding.smbBackButton.setOnClickListener { navigateUpOrFinish() }
+        binding.smbBookmarkButton.setOnClickListener { toggleBookmarkForCurrentFolder() }
         binding.smbSortButton.setOnClickListener { showSortDialog() }
         binding.smbEntriesList.layoutManager = LinearLayoutManager(this)
         onBackPressedDispatcher.addCallback(this) { navigateUpOrFinish() }
+        renderBookmarks()
         renderSavedProfiles()
 
         if (savedInstanceState == null) {
@@ -130,18 +138,40 @@ class SmbBrowserActivity : AppCompatActivity() {
         connect(profile, binding.smbRememberAccount.isChecked)
     }
 
-    private fun connect(profile: SmbProfile, remember: Boolean) {
+    private fun connect(
+        profile: SmbProfile,
+        remember: Boolean,
+        openFolderUri: String? = null
+    ) {
+        val targetUri = openFolderUri
+            ?.let(::normalizeSmbBookmarkUri)
+            ?.takeUnless { it.equals(profile.rootUri, ignoreCase = true) }
+        if (targetUri != null && !targetUri.startsWith(profile.rootUri, ignoreCase = true)) {
+            showStatus(
+                getString(
+                    R.string.smb_error_open_bookmark,
+                    getString(R.string.smb_bookmark_outside_share)
+                )
+            )
+            return
+        }
         val generation = beginRequest(getString(R.string.smb_connecting))
         networkJob = lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { manager.connect(profile, remember) }
+                runCatching {
+                    val rootEntries = manager.connect(profile, remember)
+                    if (targetUri == null) rootEntries else manager.list(profile.id, targetUri)
+                }
             }
             if (generation != requestGeneration) return@launch
             setBusy(false)
             result.onSuccess { entries ->
                 activeProfile = profile
-                currentUri = profile.rootUri
+                currentUri = targetUri ?: profile.rootUri
                 parentUris.clear()
+                if (targetUri != null) {
+                    parentUris.addAll(smbFolderAncestors(profile.rootUri, targetUri))
+                }
                 currentEntries = entries
                 pendingScrollAnchor = null
                 lastPlayedUri = null
@@ -149,7 +179,13 @@ class SmbBrowserActivity : AppCompatActivity() {
                 renderSavedProfiles()
                 renderDirectory()
             }.onFailure { error ->
-                showStatus(getString(R.string.smb_error_connect_failed, safeErrorMessage(error)))
+                showStatus(
+                    if (targetUri == null) {
+                        getString(R.string.smb_error_connect_failed, safeErrorMessage(error))
+                    } else {
+                        getString(R.string.smb_error_open_bookmark, safeErrorMessage(error))
+                    }
+                )
             }
         }
     }
@@ -224,7 +260,7 @@ class SmbBrowserActivity : AppCompatActivity() {
             R.string.smb_current_folder,
             currentUri.orEmpty().removePrefix("smb://")
         )
-        binding.smbBackButton.isEnabled = parentUris.isNotEmpty()
+        updateBookmarkButton()
         binding.smbSortButton.text = getString(sortOrderLabelRes(sortOrder))
         showStatus(
             if (entries.isEmpty()) {
@@ -243,7 +279,7 @@ class SmbBrowserActivity : AppCompatActivity() {
             mediaLoader = loader,
             highlightedUri = lastPlayedUri
         ) { entry ->
-            if (entry.directory) openDirectory(entry) else openVideo(entry)
+            if (entry.directory) openDirectory(entry) else openMedia(entry)
         }
         restoreScroll(entries, scrollAnchor)
         if (revealHighlight) ensureHighlightedEntryVisible(entries)
@@ -374,6 +410,91 @@ class SmbBrowserActivity : AppCompatActivity() {
         }
     }
 
+    private fun renderBookmarks() {
+        binding.smbBookmarksContainer.removeAllViews()
+        val bookmarks = bookmarkStore.loadAll()
+        binding.smbBookmarksSection.visibility =
+            if (bookmarks.isEmpty()) View.GONE else View.VISIBLE
+        bookmarks.forEach { bookmark ->
+            addButton(binding.smbBookmarksContainer, bookmark.displayPath) {
+                openBookmark(bookmark)
+            }.setOnLongClickListener {
+                confirmRemoveBookmark(bookmark)
+                true
+            }
+        }
+    }
+
+    private fun openBookmark(bookmark: SmbBookmark) {
+        val profile = profileStore.find(bookmark.profileId)
+        if (profile == null) {
+            showStatus(getString(R.string.smb_bookmark_account_missing))
+            return
+        }
+        fillForm(profile)
+        connect(profile, remember = true, openFolderUri = bookmark.uri)
+    }
+
+    private fun toggleBookmarkForCurrentFolder() {
+        val profile = activeProfile ?: return
+        val uri = currentUri ?: return
+        val existing = bookmarkStore.find(uri)
+        if (existing != null) {
+            bookmarkStore.remove(existing.uri)
+            renderBookmarks()
+            updateBookmarkButton()
+            showStatus(getString(R.string.smb_bookmark_removed, existing.displayPath))
+            return
+        }
+        val saveProfile = runCatching { profileStore.save(profile) }
+        if (saveProfile.isFailure) {
+            showStatus(bookmarkSaveFailure(saveProfile.exceptionOrNull()))
+            return
+        }
+        val bookmark = SmbBookmark(
+            uri = normalizeSmbBookmarkUri(uri),
+            profileId = profile.id,
+            createdAt = System.currentTimeMillis()
+        )
+        val saveBookmark = runCatching { bookmarkStore.save(bookmark) }
+        if (saveBookmark.isFailure) {
+            showStatus(bookmarkSaveFailure(saveBookmark.exceptionOrNull()))
+            return
+        }
+        renderBookmarks()
+        updateBookmarkButton()
+        showStatus(getString(R.string.smb_bookmark_added, bookmark.displayPath))
+    }
+
+    private fun updateBookmarkButton() {
+        val uri = currentUri.orEmpty()
+        binding.smbBookmarkButton.text = getString(
+            if (uri.isNotBlank() && bookmarkStore.isBookmarked(uri)) {
+                R.string.smb_bookmarked
+            } else {
+                R.string.smb_bookmark
+            }
+        )
+    }
+
+    private fun confirmRemoveBookmark(bookmark: SmbBookmark) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.smb_remove_bookmark_title)
+            .setMessage(getString(R.string.smb_remove_bookmark_message, bookmark.displayPath))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.smb_remove_bookmark) { _, _ ->
+                bookmarkStore.remove(bookmark.uri)
+                renderBookmarks()
+                updateBookmarkButton()
+            }
+            .show()
+    }
+
+    private fun bookmarkSaveFailure(error: Throwable?): String = getString(
+        R.string.smb_bookmark_save_failed,
+        safeErrorMessage(error ?: IllegalStateException(getString(R.string.error_unknown)))
+    )
+
     private fun fillForm(profile: SmbProfile) {
         binding.smbHostInput.setText(profile.host)
         binding.smbShareInput.setText(profile.share)
@@ -390,6 +511,8 @@ class SmbBrowserActivity : AppCompatActivity() {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.smb_forget) { _, _ ->
                 profileStore.remove(profile.id)
+                bookmarkStore.removeForProfile(profile.id)
+                renderBookmarks()
                 renderSavedProfiles()
             }
             .show()
@@ -425,16 +548,26 @@ class SmbBrowserActivity : AppCompatActivity() {
         SmbSortOrder.SIZE_DESC -> R.string.smb_sort_size
     }
 
-    private fun openVideo(entry: MediaEntry) {
+    private fun openMedia(entry: MediaEntry) {
         val profile = activeProfile ?: return
         lastPlayedUri = entry.uri
         pendingScrollAnchor = captureScrollAnchor()
+        val isImage = isSmbImage(entry)
+        val playlist = if (isImage) {
+            renderedEntries
+                .filter(::isSmbImage)
+                .map { image -> SourcePlaylistItem(uri = image.uri, displayName = image.name) }
+        } else {
+            emptyList()
+        }
         val source = SourceDescriptor(
             original = entry.uri,
             normalized = entry.uri,
             type = SourceType.SMB_URI,
             displayName = entry.name,
-            profileId = profile.id
+            profileId = profile.id,
+            mediaKind = if (isImage) SourceMediaKind.IMAGE else SourceMediaKind.VIDEO,
+            playlist = playlist
         )
         lifecycleScope.launch {
             val probe = trackingManager.probeConnection()
@@ -475,7 +608,7 @@ class SmbBrowserActivity : AppCompatActivity() {
 
     private fun setBusy(busy: Boolean) {
         binding.smbConnectButton.isEnabled = !busy
-        binding.smbBackButton.isEnabled = !busy && parentUris.isNotEmpty()
+        binding.smbBookmarkButton.isEnabled = !busy
         binding.smbSortButton.isEnabled = !busy
     }
 

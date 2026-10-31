@@ -1,9 +1,12 @@
 package com.vr2sbs.render
 
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
+import android.opengl.GLUtils
+import android.util.Log
 import android.view.Surface
 import com.vr2sbs.render.gl.GlUtil
 import com.vr2sbs.tracking.PoseState
@@ -33,11 +36,32 @@ class VrSbsRenderer(
     private var tanHalfFovYHandle: Int = -1
     private var fisheyeHalfFovHandle: Int = -1
 
+    private var imageProgram: Int = 0
+    private var imagePositionHandle: Int = -1
+    private var imageTexCoordHandle: Int = -1
+    private var imageTexScaleHandle: Int = -1
+    private var imageTexOffsetHandle: Int = -1
+    private var imageSamplerHandle: Int = -1
+    private var imageProjectionModeHandle: Int = -1
+    private var imageHeadYawHandle: Int = -1
+    private var imageHeadPitchHandle: Int = -1
+    private var imageEyeYawOffsetHandle: Int = -1
+    private var imageTanHalfFovXHandle: Int = -1
+    private var imageTanHalfFovYHandle: Int = -1
+    private var imageFisheyeHalfFovHandle: Int = -1
+
     private var outputWidth: Int = 1
     private var outputHeight: Int = 1
     private var externalTextureId: Int = 0
     private var surfaceTexture: SurfaceTexture? = null
     private var surface: Surface? = null
+    private val imageLock = Any()
+    private var pendingImage: Bitmap? = null
+    private var pendingImageSideBySide: Boolean = false
+    private var imageSideBySide: Boolean = false
+    private var imageGeneration: Long = 0L
+    private var uploadedImageGeneration: Long = -1L
+    private var imageTextureId: Int = 0
     @Volatile
     private var latestPose: PoseState = PoseState()
     @Volatile
@@ -80,6 +104,12 @@ class VrSbsRenderer(
     }
 
     fun onSurfaceCreated() {
+        // A lost EGL context invalidates programs and textures; recreate them.
+        imageProgram = 0
+        imageTextureId = 0
+        imageSideBySide = false
+        uploadedImageGeneration = -1L
+
         program = GlUtil.createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         positionHandle = GLES20.glGetAttribLocation(program, "aPosition")
         texCoordHandle = GLES20.glGetAttribLocation(program, "aTexCoord")
@@ -93,6 +123,8 @@ class VrSbsRenderer(
         tanHalfFovXHandle = GLES20.glGetUniformLocation(program, "uTanHalfFovX")
         tanHalfFovYHandle = GLES20.glGetUniformLocation(program, "uTanHalfFovY")
         fisheyeHalfFovHandle = GLES20.glGetUniformLocation(program, "uFisheyeHalfFovRad")
+
+        createImageProgramIfAvailable()
 
         externalTextureId = GlUtil.createExternalTexture()
         surfaceTexture = SurfaceTexture(externalTextureId).apply {
@@ -114,7 +146,12 @@ class VrSbsRenderer(
     }
 
     override fun onDrawFrame(unused: GL10?) {
-        renderFrame(externalTextureId, latestPose, latestRenderMode)
+        uploadPendingImageIfNeeded()
+        if (imageTextureId != 0) {
+            renderImageFrame(latestPose, latestRenderMode)
+        } else {
+            renderFrame(externalTextureId, latestPose, latestRenderMode)
+        }
     }
 
     fun renderFrame(frameTexId: Int, pose: PoseState, mode: RenderMode) {
@@ -178,6 +215,186 @@ class VrSbsRenderer(
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
     }
 
+    /**
+     * Shows [bitmap] instead of the video stream until cleared. A stereo
+     * side-by-side photo is split between the eyes like a video frame; a
+     * monoscopic photo is sampled in full by both eyes.
+     */
+    fun setStaticImage(bitmap: Bitmap?, sideBySide: Boolean = false) {
+        synchronized(imageLock) {
+            pendingImage = bitmap
+            pendingImageSideBySide = sideBySide
+            imageGeneration += 1L
+        }
+    }
+
+    private fun uploadPendingImageIfNeeded() {
+        val generation: Long
+        val bitmap: Bitmap?
+        val sideBySide: Boolean
+        synchronized(imageLock) {
+            generation = imageGeneration
+            bitmap = pendingImage
+            sideBySide = pendingImageSideBySide
+        }
+        if (generation == uploadedImageGeneration) return
+        uploadedImageGeneration = generation
+
+        if (bitmap == null) {
+            imageSideBySide = false
+            releaseImageTexture()
+            return
+        }
+        imageSideBySide = sideBySide
+        if (imageTextureId == 0) {
+            val textureIds = IntArray(1)
+            GLES20.glGenTextures(1, textureIds, 0)
+            imageTextureId = textureIds[0]
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, imageTextureId)
+            GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_MIN_FILTER,
+                GLES20.GL_LINEAR
+            )
+            GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_MAG_FILTER,
+                GLES20.GL_LINEAR
+            )
+            GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_WRAP_S,
+                GLES20.GL_CLAMP_TO_EDGE
+            )
+            GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_WRAP_T,
+                GLES20.GL_CLAMP_TO_EDGE
+            )
+        } else {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, imageTextureId)
+        }
+        try {
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+        } catch (error: Throwable) {
+            Log.e(TAG, "Unable to upload image texture", error)
+            releaseImageTexture()
+        } finally {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+        }
+    }
+
+    private fun releaseImageTexture() {
+        if (imageTextureId != 0) {
+            GLES20.glDeleteTextures(1, intArrayOf(imageTextureId), 0)
+            imageTextureId = 0
+        }
+    }
+
+    private fun createImageProgramIfAvailable() {
+        if (imageProgram != 0) return
+        val created = runCatching {
+            GlUtil.createProgram(VERTEX_SHADER, IMAGE_FRAGMENT_SHADER)
+        }.onFailure {
+            Log.e(TAG, "Unable to create the image shader", it)
+        }.getOrNull() ?: return
+        imageProgram = created
+        imagePositionHandle = GLES20.glGetAttribLocation(created, "aPosition")
+        imageTexCoordHandle = GLES20.glGetAttribLocation(created, "aTexCoord")
+        imageTexScaleHandle = GLES20.glGetUniformLocation(created, "uTexScaleX")
+        imageTexOffsetHandle = GLES20.glGetUniformLocation(created, "uTexOffsetX")
+        imageSamplerHandle = GLES20.glGetUniformLocation(created, "uTexture")
+        imageProjectionModeHandle = GLES20.glGetUniformLocation(created, "uProjectionMode")
+        imageHeadYawHandle = GLES20.glGetUniformLocation(created, "uHeadYawRad")
+        imageHeadPitchHandle = GLES20.glGetUniformLocation(created, "uHeadPitchRad")
+        imageEyeYawOffsetHandle = GLES20.glGetUniformLocation(created, "uEyeYawOffsetRad")
+        imageTanHalfFovXHandle = GLES20.glGetUniformLocation(created, "uTanHalfFovX")
+        imageTanHalfFovYHandle = GLES20.glGetUniformLocation(created, "uTanHalfFovY")
+        imageFisheyeHalfFovHandle = GLES20.glGetUniformLocation(created, "uFisheyeHalfFovRad")
+    }
+
+    private fun renderImageFrame(pose: PoseState, mode: RenderMode) {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        if (imageProgram == 0) return
+        GLES20.glUseProgram(imageProgram)
+
+        GLES20.glEnableVertexAttribArray(imagePositionHandle)
+        GLES20.glVertexAttribPointer(
+            imagePositionHandle,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            0,
+            quadVertices
+        )
+        GLES20.glEnableVertexAttribArray(imageTexCoordHandle)
+        GLES20.glVertexAttribPointer(
+            imageTexCoordHandle,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            0,
+            quadTexCoords
+        )
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, imageTextureId)
+        GLES20.glUniform1i(imageSamplerHandle, 0)
+        GLES20.glUniform1i(imageProjectionModeHandle, mode.projectionMode.toShaderValue())
+        GLES20.glUniform1f(imageHeadYawHandle, pose.yaw)
+        GLES20.glUniform1f(imageHeadPitchHandle, pose.pitch)
+
+        val halfWidth = outputWidth / 2
+        val leftEyeWidth = halfWidth.coerceAtLeast(1)
+        val rightEyeWidth = (outputWidth - halfWidth).coerceAtLeast(1)
+        val safeHeight = outputHeight.coerceAtLeast(1)
+        val leftAspectWidth = if (mode.packedHalfSbs) outputWidth else leftEyeWidth
+        val rightAspectWidth = if (mode.packedHalfSbs) outputWidth else rightEyeWidth
+        val halfConvergenceRadians =
+            Math.toRadians(mode.convergenceDegrees.toDouble()).toFloat() * 0.5f
+        val tanHalfFovY =
+            tan(Math.toRadians((mode.perEyeFovDegrees * 0.5f).toDouble())).toFloat()
+        val fisheyeSourceFovDegrees = if (mode.fisheyeSourceFovDegrees.isFinite()) {
+            mode.fisheyeSourceFovDegrees.coerceIn(1f, 360f)
+        } else {
+            DEFAULT_FISHEYE_SOURCE_FOV_DEGREES
+        }
+        val fisheyeHalfFovRadians =
+            Math.toRadians((fisheyeSourceFovDegrees * 0.5f).toDouble()).toFloat()
+
+        val imageTexScale = if (imageSideBySide) 0.5f else 1f
+        val leftImageTexOffset = if (imageSideBySide && mode.swapEyes) 0.5f else 0f
+        val rightImageTexOffset = if (imageSideBySide && !mode.swapEyes) 0.5f else 0f
+
+        GLES20.glViewport(0, 0, halfWidth, outputHeight)
+        GLES20.glUniform1f(imageTexScaleHandle, imageTexScale)
+        GLES20.glUniform1f(imageTexOffsetHandle, leftImageTexOffset)
+        GLES20.glUniform1f(imageEyeYawOffsetHandle, halfConvergenceRadians)
+        GLES20.glUniform1f(imageTanHalfFovYHandle, tanHalfFovY)
+        GLES20.glUniform1f(
+            imageTanHalfFovXHandle,
+            tanHalfFovY * (leftAspectWidth.toFloat() / safeHeight.toFloat())
+        )
+        GLES20.glUniform1f(imageFisheyeHalfFovHandle, fisheyeHalfFovRadians)
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+
+        GLES20.glViewport(halfWidth, 0, outputWidth - halfWidth, outputHeight)
+        GLES20.glUniform1f(imageTexScaleHandle, imageTexScale)
+        GLES20.glUniform1f(imageTexOffsetHandle, rightImageTexOffset)
+        GLES20.glUniform1f(imageEyeYawOffsetHandle, -halfConvergenceRadians)
+        GLES20.glUniform1f(imageTanHalfFovYHandle, tanHalfFovY)
+        GLES20.glUniform1f(
+            imageTanHalfFovXHandle,
+            tanHalfFovY * (rightAspectWidth.toFloat() / safeHeight.toFloat())
+        )
+        GLES20.glUniform1f(imageFisheyeHalfFovHandle, fisheyeHalfFovRadians)
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+
+        GLES20.glDisableVertexAttribArray(imagePositionHandle)
+        GLES20.glDisableVertexAttribArray(imageTexCoordHandle)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+    }
+
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
         frameAvailable.set(true)
     }
@@ -196,6 +413,14 @@ class VrSbsRenderer(
         surface = null
         surfaceTexture?.release()
         surfaceTexture = null
+        synchronized(imageLock) {
+            pendingImage = null
+            pendingImageSideBySide = false
+            imageGeneration += 1L
+        }
+        imageSideBySide = false
+        imageTextureId = 0
+        uploadedImageGeneration = -1L
     }
 
     interface Listener {
@@ -224,6 +449,16 @@ private fun ProjectionMode.toShaderValue(): Int {
         ProjectionMode.VR180_FISHEYE_EQUISOLID -> 4
     }
 }
+
+private const val TAG = "VrSbsRenderer"
+
+/**
+ * The still-image variant of the fragment shader. Sampling a regular 2D
+ * texture is the only difference; projection, head tracking, and eye
+ * viewports stay identical.
+ */
+private val IMAGE_FRAGMENT_SHADER: String =
+    FRAGMENT_SHADER.replace("samplerExternalOES", "sampler2D")
 
 private const val VERTEX_SHADER = """
 attribute vec2 aPosition;

@@ -4,6 +4,7 @@ import android.app.Application
 import com.vr2sbs.player.AppPlaybackSessionOwner
 import com.vr2sbs.player.PlaybackCoordinator
 import com.vr2sbs.player.PlaybackSessionOwner
+import com.vr2sbs.smb.SmbBookmarkStore
 import com.vr2sbs.smb.SmbClientManager
 import com.vr2sbs.smb.SmbMediaCache
 import com.vr2sbs.smb.SmbProfileStore
@@ -12,6 +13,10 @@ import com.vr2sbs.tracking.OneXrTrackingSessionManager
 class Vr2sbsApplication : Application() {
     val smbProfileStore: SmbProfileStore by lazy {
         SmbProfileStore(this)
+    }
+
+    val smbBookmarkStore: SmbBookmarkStore by lazy {
+        SmbBookmarkStore(this)
     }
 
     val smbClientManager: SmbClientManager by lazy {

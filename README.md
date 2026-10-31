@@ -6,6 +6,38 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.2.5 release notes — SMB folder bookmarks and VR180 photos
+
+This update adds bookmarks for SMB folders and support for VR180 photos. On any folder page the former **Back** control is now **Bookmark**, and saved folders appear at the top of the **Open SMB share** page for one-tap access. Photo files now appear in SMB folders and can be opened in the player, where the forward and back controls step through the folder's photos.
+
+### New: VR180 photo support
+
+- Common photo formats (`jpg`, `jpeg`, `png`, `webp`, `bmp`, `heic`, `heif`, and `avif`) are listed alongside videos in the SMB browser. Photo rows show their resolution, file size, and modified date, and use a photo badge or preview thumbnail.
+- Tap a photo to open it in the player. Side-by-side stereo VR180 photos are detected automatically and each eye receives its own half, while monoscopic photos are shown in full to both eyes.
+- While a photo is open, the in-player back and forward buttons change to **Previous photo** and **Next photo** and step through the photos in the same SMB folder in the displayed sort order. They are disabled at the first and last photo. Video playback controls are unchanged.
+- The existing projection controls still apply: VR180, fisheye, and flat projection modes, view FOV, head tracking, touchpad look-around, and Half-SBS/Full-SBS output all work with photos.
+- Large photos are downsampled to a maximum texture dimension of 4096 px, and EXIF orientation is applied. Photos opened from the system file picker, a share intent, or an HTTP(S) URL are supported too.
+
+### New: SMB folder bookmarks
+
+- While browsing a share, the control beside **Sort by** is now **Bookmark** instead of **Back**. Tapping it saves the current folder and changes the label to **Bookmarked**; tapping it again removes the bookmark.
+- Bookmarked folders are listed at the top of the **Open SMB share** page. Tap a bookmark to reconnect with its saved account and open that folder directly. Long-press a bookmark to remove it.
+- A bookmark stores the folder path and a link to the account that opened it. If **Remember this account securely** was off, bookmarking saves the account (with its encrypted password) so the folder can reopen without retyping credentials. Forgetting an account also removes its bookmarks.
+
+### Navigation change
+
+- The visible **Back** button is gone from the folder page; **Bookmark** now occupies its place. Use the system Back button or Back gesture to return to the parent folder, and again to leave the browser.
+
+### Installation and compatibility
+
+- versionName `0.2.5`, versionCode `5`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.2.4 (same signing identity); existing SMB accounts, sort order, and projection settings are kept, and new bookmarks persist across restarts. Photo metadata and thumbnails use the same on-device SMB cache as videos.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.2.4 release notes — faster SMB browsing, on-device cache, and smoother playback
 
 This update makes SMB folders open quickly even with large libraries: video details are read in parallel and shown before thumbnails, both are remembered on the device, and a new home-screen control clears the cache. It also adds the sort menu and fixes two playback interruptions plus the lost folder position when returning from the player. IMU calibration now also works on devices that only configure the glasses' ECM USB link.
@@ -191,6 +223,8 @@ This repository is forked from [NeoNatural/vr2xr-neo](https://github.com/NeoNatu
 - **Equal-resolution stereo rendering** — v0.2.3 fixes a fragment-shader precision bug that made the right eye sample at half the horizontal resolution of the left.
 - **Native SMB2/SMB3 playback** — Browse network shares with thumbnails and sorting, then stream and seek through large videos using native `libsmb2`, with `jcifs-ng` as a compatibility fallback.
 - **LAN SMB discovery** — Scan the local network for SMB servers, sign in once, and open a device's shares without typing a share name; remembered devices appear as quick-connect buttons.
+- **SMB folder bookmarks** — Save frequently used network folders from the browser and reopen them from the top of the Open SMB share page with one tap.
+- **VR180 photos** — Browse photos next to videos in SMB folders, open side-by-side VR180 stills in the SBS renderer, and step through the folder with the player's previous/next controls.
 - **Broader VR180 format support** — Play half-equirectangular, equidistant-fisheye, and equisolid-fisheye content, with independent view and lens FOV tuning.
 - **Faster view control** — Drag directly to adjust the view, pinch with two fingers to change FOV, use dedicated 5° FOV buttons, and double-tap to recenter.
 - **Smoother setup flow** — Enter calibration only when tracking requires it, launch calibration automatically after connection, and optionally hide the recurring Full SBS reminder.
@@ -202,8 +236,8 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 
 | Area | Changes in this fork |
 | --- | --- |
-| Video sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files continue to use Android's system document picker. |
-| SMB browsing | Added server/share/domain/account login, folder navigation, supported-video filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. |
+| Video and photo sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files and photos use Android's system document picker. VR180 photos open in the same SBS renderer as videos. |
+| SMB browsing | Added server/share/domain/account login, folder navigation, video and photo filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. Added folder bookmarks that reopen directly from the top of the Open SMB share page. |
 | SMB playback | Added a Media3 SMB data source with buffered random access for playback and seeking. Native `libsmb2` is preferred for throughput; `jcifs-ng` is retained as a fallback. |
 | Credential privacy | Saved SMB passwords are encrypted with AES-GCM using a non-exportable Android Keystore key. Server metadata stays in the app's private storage. |
 | Projection modes | Added VR180 fisheye equidistant and fisheye equisolid rendering in addition to the original half-equirectangular mode. |
@@ -229,8 +263,9 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 ## Features
 
 - **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle that can skip calibration when disabled
-- **Multiple video sources**: Local files, `http(s)` URLs, Android share intents, and built-in SMB2/SMB3 network shares
-- **SMB media browser**: Browse folders, show video thumbnails, sort by modification date, and remember multiple server profiles
+- **Multiple media sources**: Local files, `http(s)` URLs, Android share intents, and built-in SMB2/SMB3 network shares, including VR180 photos
+- **SMB media browser**: Browse folders, show video and photo thumbnails, sort by modification date, and remember multiple server profiles
+- **VR180 photo playback**: Open equirectangular photos in the SBS renderer and use previous/next to step through the folder
 - **SMB device discovery**: Scan the local Wi-Fi/Ethernet network for SMB servers, resolve NetBIOS names, and open a device's shares without entering a share name
 - **High-throughput SMB playback**: Native `libsmb2` random-access reading and seeking, with a `jcifs-ng` compatibility fallback
 - **Multiple VR180 projections**: VR180 to SBS (half equirectangular), fisheye equidistant, and fisheye equisolid projection

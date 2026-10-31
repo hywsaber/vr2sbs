@@ -2,6 +2,7 @@ package com.vr2sbs.display
 
 import android.app.Presentation
 import android.content.Context
+import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.view.Display
@@ -90,6 +91,11 @@ class ExternalGlPresentation(
     fun setRenderMode(mode: RenderMode) {
         if (!::renderer.isInitialized) return
         renderer.setRenderMode(mode)
+    }
+
+    fun setStaticImage(bitmap: Bitmap?, sideBySide: Boolean = false) {
+        if (!::renderer.isInitialized) return
+        renderer.setStaticImage(bitmap, sideBySide)
     }
 
     interface Listener {

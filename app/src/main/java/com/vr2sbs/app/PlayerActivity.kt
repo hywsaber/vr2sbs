@@ -2,6 +2,7 @@ package com.vr2sbs.app
 
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +15,7 @@ import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -44,6 +46,7 @@ import com.vr2sbs.display.ExternalGlPresentation
 import com.vr2sbs.display.PhysicalDisplayMode
 import com.vr2sbs.display.RouteTarget
 import com.vr2sbs.display.asDebugLabel
+import com.vr2sbs.image.VrImageLoader
 import com.vr2sbs.player.CodecCapabilityProbe
 import com.vr2sbs.player.PlaybackSessionOwner
 import com.vr2sbs.player.VrPlaybackService
@@ -51,6 +54,7 @@ import com.vr2sbs.render.ProjectionMode
 import com.vr2sbs.render.RenderMode
 import com.vr2sbs.render.VrSbsRenderer
 import com.vr2sbs.source.SourceDescriptor
+import com.vr2sbs.source.SourcePlaylistItem
 import com.vr2sbs.source.SourceType
 import com.vr2sbs.tracking.OneXrTrackingSessionManager
 import com.vr2sbs.tracking.PoseState
@@ -58,10 +62,12 @@ import com.vr2sbs.tracking.RuntimePoseController
 import com.vr2sbs.tracking.TOUCHPAD_DRAG_FULL_TRAVEL_RADIANS
 import io.onexr.XrBiasState
 import io.onexr.XrSessionState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class PlayerActivity : AppCompatActivity() {
@@ -122,6 +128,14 @@ class PlayerActivity : AppCompatActivity() {
         source = null,
         resumeExisting = false
     )
+    private var isImageMode = false
+    private var imageBaseSource: SourceDescriptor? = null
+    private var imagePlaylist: List<SourcePlaylistItem> = emptyList()
+    private var imageIndex = 0
+    private var currentImageBitmap: Bitmap? = null
+    private var currentImageSideBySide = false
+    private var imageLoadJob: Job? = null
+    private var imageLoadGeneration = 0L
 
     private val mediaControllerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -232,16 +246,20 @@ class PlayerActivity : AppCompatActivity() {
         applyRuntimePose(runtimePoseController.currentPose())
 
         setupControls()
-        connectMediaController()
-
-        val currentSessionSource = playbackSession.state.value.source
-        val shouldForceReset = shouldForceSourceReset(
-            hasSavedInstanceState = savedInstanceState != null,
-            resumeExisting = launchRequest.resumeExisting,
-            currentSourceNormalized = currentSessionSource?.normalized,
-            requestedSourceNormalized = resolvedSource.normalized
-        )
-        playbackSession.attachSource(resolvedSource, forceReset = shouldForceReset)
+        if (resolvedSource.isImage) {
+            val restoredIndex = savedInstanceState?.getInt(STATE_IMAGE_INDEX, -1) ?: -1
+            enterImageMode(resolvedSource, restoredIndex)
+        } else {
+            connectMediaController()
+            val currentSessionSource = playbackSession.state.value.source
+            val shouldForceReset = shouldForceSourceReset(
+                hasSavedInstanceState = savedInstanceState != null,
+                resumeExisting = launchRequest.resumeExisting,
+                currentSourceNormalized = currentSessionSource?.normalized,
+                requestedSourceNormalized = resolvedSource.normalized
+            )
+            playbackSession.attachSource(resolvedSource, forceReset = shouldForceReset)
+        }
         updateTrackingSummary()
         updateTrackingControls()
         renderRouteStatus()
@@ -251,7 +269,9 @@ class PlayerActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         routeBinding.onStart()
-        connectMediaController()
+        if (!isImageMode) {
+            connectMediaController()
+        }
         displayController.start()
         binding.videoSurface.onResume()
         syncExternalPresentation()
@@ -304,6 +324,10 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         hideBufferingPrompt()
+        imageLoadJob?.cancel()
+        imageLoadJob = null
+        imageLoadGeneration += 1L
+        currentImageBitmap = null
         routeBinding.onTeardownBegin()
         clearActiveSurface(force = true)
         dismissExternalPresentation()
@@ -317,6 +341,9 @@ class PlayerActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putFloat(STATE_PER_EYE_FOV_DEGREES, renderMode.perEyeFovDegrees)
+        if (isImageMode) {
+            outState.putInt(STATE_IMAGE_INDEX, imageIndex)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -327,6 +354,11 @@ class PlayerActivity : AppCompatActivity() {
         if (!::playbackSession.isInitialized) {
             return
         }
+        if (resolvedSource.isImage) {
+            enterImageMode(resolvedSource, restoredIndex = -1)
+            return
+        }
+        exitImageMode()
         val currentSessionSource = playbackSession.state.value.source
         val shouldForceReset = shouldForceSourceReset(
             hasSavedInstanceState = false,
@@ -340,6 +372,7 @@ class PlayerActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "PlayerActivity"
         private const val STATE_PER_EYE_FOV_DEGREES = "state_per_eye_fov_degrees"
+        private const val STATE_IMAGE_INDEX = "state_image_index"
         const val EXTRA_SOURCE = "extra_source"
         const val EXTRA_RESUME_EXISTING = "extra_resume_existing"
     }
@@ -414,11 +447,10 @@ class PlayerActivity : AppCompatActivity() {
         binding.fovIncreaseButton.setOnClickListener {
             adjustProjectionFovByStep(ProjectionFovConfig.STEP_DEGREES)
         }
-        binding.seekBackButton.setOnClickListener { seekBy(-SEEK_INTERVAL_MS) }
         binding.playPauseButton.setOnClickListener { togglePlayPause() }
-        binding.seekForwardButton.setOnClickListener { seekBy(SEEK_INTERVAL_MS) }
         setupTimeline()
         setupTouchpad()
+        configureVideoModeUi()
         refreshTimelineUi()
         updatePlayPauseButton()
     }
@@ -586,6 +618,151 @@ class PlayerActivity : AppCompatActivity() {
         val boundedTarget = if (durationMs != null) target.coerceAtMost(durationMs) else target
         controller.seekTo(boundedTarget)
         refreshTimelineUi()
+    }
+
+    private fun enterImageMode(source: SourceDescriptor, restoredIndex: Int) {
+        isImageMode = true
+        imageBaseSource = source
+        imagePlaylist = if (source.playlist.isNotEmpty()) {
+            source.playlist
+        } else {
+            listOf(
+                SourcePlaylistItem(
+                    uri = source.normalized,
+                    displayName = source.displayName ?: source.normalized
+                )
+            )
+        }
+        imageIndex = initialImageIndex(
+            playlist = imagePlaylist,
+            sourceUri = source.normalized,
+            restoredIndex = restoredIndex
+        )
+        // A video may still be playing when a photo is opened from the browser.
+        playbackSession.pauseForAppBackground()
+        releaseMediaController()
+        configureImageModeUi()
+        showImageAt(imageIndex)
+    }
+
+    private fun exitImageMode() {
+        if (!isImageMode) return
+        isImageMode = false
+        imageLoadGeneration += 1L
+        imageLoadJob?.cancel()
+        imageLoadJob = null
+        imageBaseSource = null
+        imagePlaylist = emptyList()
+        imageIndex = 0
+        currentImageBitmap = null
+        currentImageSideBySide = false
+        if (::internalRenderer.isInitialized) {
+            internalRenderer.setStaticImage(null)
+        }
+        externalPresentation?.setStaticImage(null)
+        configureVideoModeUi()
+        connectMediaController()
+    }
+
+    private fun configureImageModeUi() {
+        binding.playerTimelineRow.visibility = View.GONE
+        binding.playPauseButton.visibility = View.GONE
+        binding.seekBackButton.contentDescription =
+            getString(R.string.player_previous_photo_content_description)
+        binding.seekForwardButton.contentDescription =
+            getString(R.string.player_next_photo_content_description)
+        binding.seekBackButton.setOnClickListener { showPreviousImage() }
+        binding.seekForwardButton.setOnClickListener { showNextImage() }
+        updateImageNavigationButtons()
+    }
+
+    private fun configureVideoModeUi() {
+        binding.playerTimelineRow.visibility = View.VISIBLE
+        binding.playPauseButton.visibility = View.VISIBLE
+        binding.seekBackButton.contentDescription =
+            getString(R.string.player_seek_back_content_description)
+        binding.seekForwardButton.contentDescription =
+            getString(R.string.player_seek_forward_content_description)
+        binding.seekBackButton.setOnClickListener { seekBy(-SEEK_INTERVAL_MS) }
+        binding.seekForwardButton.setOnClickListener { seekBy(SEEK_INTERVAL_MS) }
+        binding.seekBackButton.isEnabled = true
+        binding.seekForwardButton.isEnabled = true
+    }
+
+    private fun showPreviousImage() {
+        if (imageIndex > 0) {
+            showImageAt(imageIndex - 1)
+        }
+    }
+
+    private fun showNextImage() {
+        if (imageIndex < imagePlaylist.lastIndex) {
+            showImageAt(imageIndex + 1)
+        }
+    }
+
+    private fun currentImageSource(): SourceDescriptor? {
+        val baseSource = imageBaseSource ?: return null
+        val item = imagePlaylist.getOrNull(imageIndex) ?: return baseSource
+        return baseSource.copy(
+            original = item.uri,
+            normalized = item.uri,
+            displayName = item.displayName
+        )
+    }
+
+    private fun updateImageNavigationButtons() {
+        binding.seekBackButton.isEnabled = imageIndex > 0
+        binding.seekForwardButton.isEnabled = imageIndex < imagePlaylist.lastIndex
+    }
+
+    private fun showImageAt(index: Int) {
+        val item = imagePlaylist.getOrNull(index) ?: return
+        val baseSource = imageBaseSource ?: return
+        imageIndex = index
+        updateImageNavigationButtons()
+        val imageSource = baseSource.copy(
+            original = item.uri,
+            normalized = item.uri,
+            displayName = item.displayName
+        )
+        imageLoadJob?.cancel()
+        val generation = ++imageLoadGeneration
+        imageLoadJob = lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    VrImageLoader.load(
+                        context = this@PlayerActivity,
+                        smbClientManager = (application as Vr2sbsApplication).smbClientManager,
+                        source = imageSource
+                    )
+                }
+            }
+            if (!isActive || generation != imageLoadGeneration || !isImageMode) {
+                return@launch
+            }
+            result
+                .onSuccess { loaded ->
+                    currentImageBitmap = loaded.bitmap
+                    currentImageSideBySide = loaded.sideBySide
+                    internalRenderer.setStaticImage(loaded.bitmap, loaded.sideBySide)
+                    externalPresentation?.setStaticImage(loaded.bitmap, loaded.sideBySide)
+                }
+                .onFailure { error ->
+                    currentImageBitmap = null
+                    currentImageSideBySide = false
+                    internalRenderer.setStaticImage(null)
+                    externalPresentation?.setStaticImage(null)
+                    Toast.makeText(
+                        this@PlayerActivity,
+                        getString(
+                            R.string.player_image_load_failed,
+                            error.message ?: getString(R.string.error_unknown)
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+        }
     }
 
     private fun togglePlayPause() {
@@ -821,7 +998,11 @@ class PlayerActivity : AppCompatActivity() {
      * playback session is preserved so the player can resume the same source.
      */
     private fun launchCalibrationSetup() {
-        val source = playbackSession.state.value.source ?: launchRequest.source
+        val source = if (isImageMode) {
+            currentImageSource() ?: launchRequest.source
+        } else {
+            playbackSession.state.value.source ?: launchRequest.source
+        }
         val intent = Intent(this, TrackingSetupActivity::class.java)
             .putExtra(PlayerActivity.EXTRA_RESUME_EXISTING, true)
         if (source != null) {
@@ -1342,6 +1523,9 @@ class PlayerActivity : AppCompatActivity() {
                 externalPresentationShownAtElapsedRealtimeMs = SystemClock.elapsedRealtime()
                 applyRenderModeToRenderers()
                 applyPoseToRenderers(latestPose)
+                if (isImageMode) {
+                    it.setStaticImage(currentImageBitmap, currentImageSideBySide)
+                }
             }
         }.onFailure {
             if (token != externalPresentationToken) {
@@ -1610,6 +1794,18 @@ internal fun shouldForceSourceReset(
 ): Boolean {
     return !hasSavedInstanceState &&
         !(resumeExisting && currentSourceNormalized == requestedSourceNormalized)
+}
+
+internal fun initialImageIndex(
+    playlist: List<SourcePlaylistItem>,
+    sourceUri: String,
+    restoredIndex: Int
+): Int {
+    if (restoredIndex in playlist.indices) return restoredIndex
+    val matchingIndex = playlist.indexOfFirst {
+        it.uri.equals(sourceUri, ignoreCase = true)
+    }
+    return if (matchingIndex >= 0) matchingIndex else 0
 }
 
 private const val EXTERNAL_RECONNECT_WATCHDOG_MS = 500L

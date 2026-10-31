@@ -1,6 +1,7 @@
 package com.vr2sbs.smb
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
 import android.os.Handler
@@ -8,7 +9,10 @@ import android.os.Looper
 import android.util.LruCache
 import android.widget.ImageView
 import com.vr2sbs.R
+import java.io.BufferedInputStream
 import java.io.Closeable
+import java.io.IOException
+import java.io.InputStream
 import java.util.Collections
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -36,6 +40,7 @@ class SmbMediaLoader(
     private val thumbnailRequests = mutableMapOf<String, MutableList<ImageView>>()
     private val queuedThumbnailKeys = mutableSetOf<String>()
     private val activeSources = Collections.synchronizedSet(mutableSetOf<SmbMediaDataSource>())
+    private val activeImageSources = Collections.synchronizedSet(mutableSetOf<RandomAccessSource>())
     private val thumbnailCache = object : LruCache<String, Bitmap>(BITMAP_CACHE_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
@@ -57,7 +62,9 @@ class SmbMediaLoader(
     fun bind(entry: MediaEntry, target: ImageView) {
         val key = entry.mediaKey()
         target.tag = key
-        target.setImageResource(R.drawable.ic_smb_video)
+        target.setImageResource(
+            if (isSmbImage(entry)) R.drawable.ic_smb_image else R.drawable.ic_smb_video
+        )
         if (closed.get()) return
         val memoryThumbnail = synchronized(lock) { thumbnailCache.get(key) }
         if (memoryThumbnail != null) {
@@ -129,6 +136,10 @@ class SmbMediaLoader(
         synchronized(activeSources) {
             activeSources.toList().forEach { runCatching { it.close() } }
             activeSources.clear()
+        }
+        synchronized(activeImageSources) {
+            activeImageSources.toList().forEach { runCatching { it.close() } }
+            activeImageSources.clear()
         }
         synchronized(lock) {
             thumbnailRequests.clear()
@@ -204,6 +215,7 @@ class SmbMediaLoader(
 
     private fun loadThumbnailSession(entry: MediaEntry): Bitmap? {
         if (closed.get()) return null
+        if (isSmbImage(entry)) return loadImageThumbnailSession(entry)
         val source = manager.openRandomAccess(profileId, entry.uri)
         val mediaSource = SmbMediaDataSource(source)
         activeSources.add(mediaSource)
@@ -225,6 +237,7 @@ class SmbMediaLoader(
 
     private fun loadMetadata(entry: MediaEntry): SmbVideoMetadata? {
         if (closed.get()) return null
+        if (isSmbImage(entry)) return loadImageMetadata(entry)
         val source = manager.openRandomAccess(profileId, entry.uri)
         val mediaSource = SmbMediaDataSource(source)
         activeSources.add(mediaSource)
@@ -237,6 +250,90 @@ class SmbMediaLoader(
             activeSources.remove(mediaSource)
             mediaSource.close()
         }
+    }
+
+    /**
+     * Photos are decoded on the device, so only the image header is read for
+     * the details line and the full file is fetched once for a thumbnail.
+     */
+    private fun loadImageMetadata(entry: MediaEntry): SmbVideoMetadata? {
+        if (closed.get()) return null
+        val source = manager.openRandomAccess(profileId, entry.uri)
+        activeImageSources.add(source)
+        return try {
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BufferedInputStream(
+                RandomAccessInputStream(source),
+                IMAGE_STREAM_BUFFER_BYTES
+            ).use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+            }
+            if (options.outWidth <= 0 || options.outHeight <= 0) {
+                null
+            } else {
+                SmbVideoMetadata(
+                    width = options.outWidth,
+                    height = options.outHeight,
+                    durationMs = 0L
+                )
+            }
+        } finally {
+            activeImageSources.remove(source)
+            runCatching { source.close() }
+        }
+    }
+
+    private fun loadImageThumbnailSession(entry: MediaEntry): Bitmap? {
+        if (closed.get() || entry.size > MAX_IMAGE_BYTES) return null
+        val source = manager.openRandomAccess(profileId, entry.uri)
+        activeImageSources.add(source)
+        return try {
+            val bytes = readImageBytes(source)
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = sampleSizeFor(
+                    width = bounds.outWidth,
+                    height = bounds.outHeight,
+                    targetSizePx = thumbnailSizePx
+                )
+            }
+            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                ?: return null
+            scaleToFit(decoded, thumbnailSizePx)
+        } finally {
+            activeImageSources.remove(source)
+            runCatching { source.close() }
+        }
+    }
+
+    private fun readImageBytes(source: RandomAccessSource): ByteArray {
+        val size = source.size()
+        if (size <= 0L) throw IOException("Image is empty")
+        if (size > MAX_IMAGE_BYTES) throw IOException("Image is too large")
+        val bytes = ByteArray(size.toInt())
+        var offset = 0
+        while (offset < bytes.size) {
+            val read = source.readAt(
+                offset.toLong(),
+                bytes,
+                offset,
+                minOf(IMAGE_STREAM_BUFFER_BYTES, bytes.size - offset)
+            )
+            if (read <= 0) throw IOException("Unexpected end of image")
+            offset += read
+        }
+        return bytes
+    }
+
+    private fun sampleSizeFor(width: Int, height: Int, targetSizePx: Int): Int {
+        val safeTarget = targetSizePx.coerceAtLeast(1)
+        var sample = 1
+        while (maxOf(width / sample, height / sample) > safeTarget * 2) {
+            sample *= 2
+        }
+        return sample
     }
 
     private fun scaleToFit(frame: Bitmap, maxSizePx: Int): Bitmap {
@@ -281,6 +378,8 @@ class SmbMediaLoader(
         private const val BITMAP_CACHE_BYTES = 12 * 1024 * 1024
         private const val METADATA_CACHE_ENTRIES = 512
         private const val THUMBNAIL_TIME_US = 1_000_000L
+        private const val IMAGE_STREAM_BUFFER_BYTES = 64 * 1024
+        private const val MAX_IMAGE_BYTES = 128L * 1024L * 1024L
         private const val METADATA_KEY_VIDEO_WIDTH = MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH
         private const val METADATA_KEY_VIDEO_HEIGHT = MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT
         private const val METADATA_KEY_VIDEO_ROTATION =
@@ -291,6 +390,26 @@ class SmbMediaLoader(
 }
 
 private fun MediaEntry.mediaKey(): String = "$uri|$size|$modifiedTime"
+
+private class RandomAccessInputStream(
+    private val source: RandomAccessSource
+) : InputStream() {
+    private var position = 0L
+
+    override fun read(): Int {
+        val single = ByteArray(1)
+        val read = read(single, 0, 1)
+        return if (read <= 0) -1 else single[0].toInt() and 0xFF
+    }
+
+    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        if (length == 0) return 0
+        val read = source.readAt(position, buffer, offset, length)
+        if (read <= 0) return -1
+        position += read
+        return read
+    }
+}
 
 private class SmbMediaDataSource(
     private val source: RandomAccessSource

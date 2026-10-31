@@ -18,14 +18,16 @@ class SourceResolver {
                 original = uri.toString(),
                 normalized = uri.toString(),
                 type = SourceType.HTTP_URL,
-                displayName = uri.lastPathSegment
+                displayName = uri.lastPathSegment,
+                mediaKind = mediaKindFor(uri.lastPathSegment, null)
             )
 
             ContentResolver.SCHEME_CONTENT, ContentResolver.SCHEME_FILE -> SourceDescriptor(
                 original = uri.toString(),
                 normalized = uri.toString(),
                 type = SourceType.LOCAL_URI,
-                displayName = uri.lastPathSegment
+                displayName = uri.lastPathSegment,
+                mediaKind = mediaKindFor(uri.lastPathSegment, null)
             )
 
             else -> null
@@ -54,7 +56,8 @@ class SourceResolver {
                     original = normalizedRaw,
                     normalized = parsed.toString(),
                     type = SourceType.HTTP_URL,
-                    displayName = parsed.lastPathSegment
+                    displayName = parsed.lastPathSegment,
+                    mediaKind = mediaKindFor(parsed.lastPathSegment, null)
                 )
             )
         } else {
@@ -86,7 +89,11 @@ class SourceResolver {
                     original = uri.toString(),
                     normalized = uri.toString(),
                     type = SourceType.LOCAL_URI,
-                    displayName = uri.lastPathSegment
+                    displayName = uri.lastPathSegment,
+                    mediaKind = mediaKindFor(
+                        uri,
+                        runCatching { context.contentResolver.getType(uri) }.getOrNull()
+                    )
                 )
             )
 
