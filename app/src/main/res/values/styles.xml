@@ -12,6 +12,12 @@
         <item name="android:textSize">@dimen/launcher_body_text_size</item>
     </style>
 
+    <style name="TextAppearance.Vr2sbs.Launcher.EntryMeta" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:textSize">@dimen/smb_entry_meta_text_size</item>
+    </style>
+
     <style name="TextAppearance.Vr2sbs.Launcher.Footer" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textColor">@color/launcher_text_secondary</item>

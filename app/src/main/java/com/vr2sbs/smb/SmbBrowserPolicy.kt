@@ -8,7 +8,18 @@ private val VIDEO_EXTENSIONS = setOf(
 
 enum class SmbSortOrder {
     NEWEST_FIRST,
-    OLDEST_FIRST
+    OLDEST_FIRST,
+    RESOLUTION_DESC,
+    DURATION_DESC,
+    SIZE_DESC;
+
+    val requiresVideoMetadata: Boolean
+        get() = this == RESOLUTION_DESC || this == DURATION_DESC
+
+    companion object {
+        fun fromStoredValue(value: String?): SmbSortOrder =
+            entries.firstOrNull { it.name == value } ?: NEWEST_FIRST
+    }
 }
 
 fun isSmbVideo(entry: MediaEntry): Boolean {
@@ -18,14 +29,58 @@ fun isSmbVideo(entry: MediaEntry): Boolean {
     return extension in VIDEO_EXTENSIONS
 }
 
-fun sortSmbEntries(entries: List<MediaEntry>, order: SmbSortOrder): List<MediaEntry> =
-    entries
-        .filter { it.directory || isSmbVideo(it) }
-        .sortedWith(
-            compareBy<MediaEntry> { !it.directory }
-                .thenComparator { left, right -> compareModifiedTime(left, right, order) }
-                .thenBy { it.name.lowercase(Locale.ROOT) }
+fun sortSmbEntries(
+    entries: List<MediaEntry>,
+    order: SmbSortOrder,
+    metadata: (MediaEntry) -> SmbVideoMetadata? = { null }
+): List<MediaEntry> {
+    val visibleEntries = entries.filter { it.directory || isSmbVideo(it) }
+    if (visibleEntries.isEmpty()) return emptyList()
+    val metadataByUri = if (order.requiresVideoMetadata) {
+        visibleEntries.associate { it.uri to metadata(it) }
+    } else {
+        emptyMap()
+    }
+    return visibleEntries.sortedWith(
+        compareBy<MediaEntry> { !it.directory }
+            .thenComparator { left, right ->
+                compareEntries(left, right, order, metadataByUri)
+            }
+            .thenBy { it.name.lowercase(Locale.ROOT) }
+    )
+}
+
+private fun compareEntries(
+    left: MediaEntry,
+    right: MediaEntry,
+    order: SmbSortOrder,
+    metadataByUri: Map<String, SmbVideoMetadata?>
+): Int {
+    if (left.directory && right.directory && order != SmbSortOrder.NEWEST_FIRST &&
+        order != SmbSortOrder.OLDEST_FIRST
+    ) {
+        return 0
+    }
+    return when (order) {
+        SmbSortOrder.NEWEST_FIRST,
+        SmbSortOrder.OLDEST_FIRST -> compareModifiedTime(left, right, order)
+
+        SmbSortOrder.RESOLUTION_DESC -> compareDescendingKnownLast(
+            metadataByUri[left.uri]?.pixelCount,
+            metadataByUri[right.uri]?.pixelCount
         )
+
+        SmbSortOrder.DURATION_DESC -> compareDescendingKnownLast(
+            metadataByUri[left.uri]?.knownDurationMs,
+            metadataByUri[right.uri]?.knownDurationMs
+        )
+
+        SmbSortOrder.SIZE_DESC -> compareDescendingKnownLast(
+            left.size.takeIf { it > 0L },
+            right.size.takeIf { it > 0L }
+        )
+    }
+}
 
 private fun compareModifiedTime(left: MediaEntry, right: MediaEntry, order: SmbSortOrder): Int {
     val leftUnknown = left.modifiedTime <= 0L
@@ -35,5 +90,12 @@ private fun compareModifiedTime(left: MediaEntry, right: MediaEntry, order: SmbS
     return when (order) {
         SmbSortOrder.NEWEST_FIRST -> right.modifiedTime.compareTo(left.modifiedTime)
         SmbSortOrder.OLDEST_FIRST -> left.modifiedTime.compareTo(right.modifiedTime)
+        else -> 0
     }
+}
+
+private fun <T : Comparable<T>> compareDescendingKnownLast(left: T?, right: T?): Int {
+    if (left == null) return if (right == null) 0 else 1
+    if (right == null) return -1
+    return right.compareTo(left)
 }

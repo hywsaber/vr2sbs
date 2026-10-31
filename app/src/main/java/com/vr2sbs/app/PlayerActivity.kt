@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -50,6 +51,7 @@ import com.vr2sbs.render.ProjectionMode
 import com.vr2sbs.render.RenderMode
 import com.vr2sbs.render.VrSbsRenderer
 import com.vr2sbs.source.SourceDescriptor
+import com.vr2sbs.source.SourceType
 import com.vr2sbs.tracking.OneXrTrackingSessionManager
 import com.vr2sbs.tracking.PoseState
 import com.vr2sbs.tracking.RuntimePoseController
@@ -80,6 +82,9 @@ class PlayerActivity : AppCompatActivity() {
     private var externalPresentation: ExternalGlPresentation? = null
     private var externalPresentationModeSignature: DisplayModeSignature? = null
     private var externalPresentationToken: Long = 0L
+    private var externalPresentationShownAtElapsedRealtimeMs: Long = 0L
+    private var outputRebuildPlaybackPreserved = false
+    private var outputRebuildDeadlineElapsedRealtimeMs: Long = 0L
     private var latestPose: PoseState = PoseState()
     private lateinit var runtimePoseController: RuntimePoseController
     private var trackingSummary: String = ""
@@ -106,6 +111,10 @@ class PlayerActivity : AppCompatActivity() {
     private var isTimelineScrubbing = false
     private var isTouchpadScaling = false
     private var pendingTimelinePositionMs = 0L
+    private var bufferingDialog: AlertDialog? = null
+    private var bufferingPromptJob: Job? = null
+    private var bufferingPromptDismissedForCurrentStall = false
+    private var playbackHasStartedForCurrentSource = false
     private var projectionFovSliderOnChangeCount = 0
     private var lastTouchpadX = 0f
     private var lastTouchpadY = 0f
@@ -116,12 +125,28 @@ class PlayerActivity : AppCompatActivity() {
 
     private val mediaControllerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (isPlaying) {
+                playbackHasStartedForCurrentSource = true
+                hideBufferingPrompt()
+            }
             updatePlayPauseButton()
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_IDLE) {
+                playbackHasStartedForCurrentSource = false
+            }
+            handleBufferingState(playbackState)
             refreshTimelineUi()
             updatePlayPauseButton()
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (playWhenReady) {
+                scheduleBufferingPromptIfNeeded()
+            } else {
+                hideBufferingPrompt()
+            }
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
@@ -248,6 +273,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        hideBufferingPrompt()
+        outputRebuildPlaybackPreserved = false
         routeBinding.onTeardownBegin()
         displayController.stop()
         stopPlaybackProgressUpdates()
@@ -276,6 +303,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        hideBufferingPrompt()
         routeBinding.onTeardownBegin()
         clearActiveSurface(force = true)
         dismissExternalPresentation()
@@ -633,6 +661,82 @@ class PlayerActivity : AppCompatActivity() {
         binding.playPauseButton.contentDescription = contentDescription
     }
 
+    private fun handleBufferingState(playbackState: Int) {
+        if (playbackState == Player.STATE_BUFFERING) {
+            scheduleBufferingPromptIfNeeded()
+        } else {
+            hideBufferingPrompt()
+        }
+    }
+
+    private fun scheduleBufferingPromptIfNeeded() {
+        if (bufferingPromptDismissedForCurrentStall || bufferingDialog != null) return
+        if (bufferingPromptJob?.isActive == true) return
+        val controller = mediaController ?: return
+        if (controller.playbackState != Player.STATE_BUFFERING || !controller.playWhenReady) return
+        if (!isNetworkPlaybackSource()) return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
+        val promptDelayMs = if (playbackHasStartedForCurrentSource) {
+            BUFFERING_PROMPT_DELAY_MS
+        } else {
+            INITIAL_BUFFERING_PROMPT_DELAY_MS
+        }
+        bufferingPromptJob = lifecycleScope.launch {
+            delay(promptDelayMs)
+            if (!isActive) return@launch
+            bufferingPromptJob = null
+            val latest = mediaController ?: return@launch
+            if (latest.playbackState != Player.STATE_BUFFERING || !latest.playWhenReady) {
+                return@launch
+            }
+            if (bufferingPromptDismissedForCurrentStall || bufferingDialog != null) {
+                return@launch
+            }
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                return@launch
+            }
+            showBufferingDialog()
+        }
+    }
+
+    private fun isNetworkPlaybackSource(): Boolean = when (
+        playbackSession.state.value.source?.type
+    ) {
+        SourceType.SMB_URI, SourceType.HTTP_URL -> true
+        else -> false
+    }
+
+    private fun showBufferingDialog() {
+        if (isFinishing || isDestroyed || bufferingDialog != null) return
+        val dialog = MaterialAlertDialogBuilder(
+            this,
+            R.style.ThemeOverlay_Vr2sbs_Player_SettingsDialog
+        )
+            .setTitle(R.string.player_buffering_title)
+            .setMessage(R.string.player_buffering_message)
+            .setPositiveButton(R.string.player_buffering_wait, null)
+            .create()
+        dialog.setOnDismissListener {
+            bufferingDialog = null
+            bufferingPromptDismissedForCurrentStall = true
+            bufferingPromptJob?.cancel()
+            bufferingPromptJob = null
+        }
+        bufferingDialog = dialog
+        dialog.show()
+        applyPlayerSettingsDialogStyle(dialog)
+    }
+
+    private fun hideBufferingPrompt() {
+        bufferingPromptJob?.cancel()
+        bufferingPromptJob = null
+        val dialog = bufferingDialog
+        bufferingDialog = null
+        dialog?.setOnDismissListener(null)
+        dialog?.dismiss()
+        bufferingPromptDismissedForCurrentStall = false
+    }
+
     private fun startPlaybackProgressUpdates() {
         if (playbackProgressJob?.isActive == true) {
             return
@@ -955,6 +1059,7 @@ class PlayerActivity : AppCompatActivity() {
         if (sbsOutputFormat == format) {
             return
         }
+        val wasExpectedPlaying = playbackSession.state.value.expectedPlayWhenReady
         sbsOutputFormat = format
         renderMode = renderMode.copy(packedHalfSbs = format == SbsOutputFormat.HALF)
         projectionSettingsPreferences.edit()
@@ -965,10 +1070,24 @@ class PlayerActivity : AppCompatActivity() {
             .apply()
         applyRenderModeToRenderers()
         if (externalPresentation != null) {
+            if (wasExpectedPlaying) {
+                // Rebuilding the glasses presentation temporarily removes the
+                // video surface. Keep the player running instead of treating
+                // that moment as an output interruption.
+                outputRebuildPlaybackPreserved = true
+                outputRebuildDeadlineElapsedRealtimeMs =
+                    SystemClock.elapsedRealtime() + OUTPUT_REBUILD_PRESERVE_MS
+                logRouting("preserve playback during SBS output rebuild")
+            }
             dismissExternalPresentation()
             syncExternalPresentation()
         }
         Log.i(TAG, "SBS output format changed to $format")
+    }
+
+    private fun shouldPreservePlaybackDuringOutputRebuild(): Boolean {
+        return outputRebuildPlaybackPreserved &&
+            SystemClock.elapsedRealtime() < outputRebuildDeadlineElapsedRealtimeMs
     }
 
     private fun applyFisheyeSourceFov(value: Float) {
@@ -1160,11 +1279,14 @@ class PlayerActivity : AppCompatActivity() {
 
         val currentSignature = display.toSignature()
         val activePresentation = externalPresentation
+        val presentationIsSettling = activePresentation != null &&
+            SystemClock.elapsedRealtime() - externalPresentationShownAtElapsedRealtimeMs <
+            EXTERNAL_PRESENTATION_SETTLE_MS
         if (
             activePresentation != null &&
             activePresentation.display.displayId == display.displayId &&
             externalPresentationModeSignature == currentSignature &&
-            externalSurface != null
+            (externalSurface != null || presentationIsSettling)
         ) {
             return
         }
@@ -1217,6 +1339,7 @@ class PlayerActivity : AppCompatActivity() {
                 externalPresentation = it
                 externalPresentationModeSignature = currentSignature
                 it.show()
+                externalPresentationShownAtElapsedRealtimeMs = SystemClock.elapsedRealtime()
                 applyRenderModeToRenderers()
                 applyPoseToRenderers(latestPose)
             }
@@ -1239,6 +1362,7 @@ class PlayerActivity : AppCompatActivity() {
         externalPresentation = null
         externalSurface = null
         externalPresentationModeSignature = null
+        externalPresentationShownAtElapsedRealtimeMs = 0L
     }
 
     private fun onInternalSurfaceReady(surface: Surface) {
@@ -1297,7 +1421,11 @@ class PlayerActivity : AppCompatActivity() {
             }
             RouteTarget.HOLD_CURRENT -> Unit
             RouteTarget.NONE -> {
-                playbackSession.pauseForInterruption()
+                if (shouldPreservePlaybackDuringOutputRebuild()) {
+                    logRouting("skip interruption pause during SBS output rebuild")
+                } else {
+                    playbackSession.pauseForInterruption()
+                }
                 clearActiveSurface()
             }
         }
@@ -1485,8 +1613,12 @@ internal fun shouldForceSourceReset(
 }
 
 private const val EXTERNAL_RECONNECT_WATCHDOG_MS = 500L
+private const val EXTERNAL_PRESENTATION_SETTLE_MS = 2000L
+private const val OUTPUT_REBUILD_PRESERVE_MS = 5000L
 private const val PAUSED_FRAME_REFRESH_RETRY_MS = 250L
 private const val PAUSED_FRAME_VISIBILITY_TIMEOUT_MS = 2000L
+private const val BUFFERING_PROMPT_DELAY_MS = 2500L
+private const val INITIAL_BUFFERING_PROMPT_DELAY_MS = 8000L
 private const val SEEK_INTERVAL_MS = 15_000L
 private const val PLAYBACK_PROGRESS_UPDATE_MS = 300L
 private const val DEFAULT_IMU_SENSITIVITY = 0.9f

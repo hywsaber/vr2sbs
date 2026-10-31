@@ -26,6 +26,9 @@
     <string name="player_timeline_content_description">Playback timeline</string>
     <string name="player_touchpad_content_description">Manual touch tracking area</string>
     <string name="player_settings_close">Close</string>
+    <string name="player_buffering_title">Network buffering</string>
+    <string name="player_buffering_message">Your network connection is slower than the video needs. Playback is buffering and will continue automatically when enough data is available.</string>
+    <string name="player_buffering_wait">Keep waiting</string>
     <string name="imu_sensitivity_title">IMU Sensitivity</string>
     <string name="imu_sensitivity_default_value">0.9</string>
     <string name="imu_sensitivity_value_format">%1$.1f</string>
@@ -57,7 +60,7 @@
     <string name="requirements_modal_message">- XREAL One or XREAL One Pro glasses are required\n- Android 13 or newer is required\n- Samsung DeX desktop mode is not supported. Turn off DeX and use screen mirroring</string>
     <string name="requirements_modal_action">Got it</string>
     <string name="toast_glasses_required">Connect XREAL glasses, then select VR SBS content</string>
-    <string name="footer_designed_with">Designed with ❤️ by Neil Skaria\nOptimized by NeoNatural</string>
+    <string name="footer_designed_with">Designed with ❤️ by Neil Skaria\nOptimized by Hywsaber</string>
     <string name="tracking_setup_step1">Place your glasses on a flat surface and tap Run Calibration</string>
     <string name="tracking_setup_idle">Tap Run Calibration to begin</string>
     <string name="tracking_setup_connecting">Connecting to glasses</string>
@@ -89,8 +92,14 @@
     <string name="smb_connecting">Connecting to SMB server…</string>
     <string name="smb_loading">Loading folder…</string>
     <string name="smb_back">Back</string>
+    <string name="smb_sort_title">Sort by</string>
     <string name="smb_sort_newest_first">Newest first</string>
     <string name="smb_sort_oldest_first">Oldest first</string>
+    <string name="smb_sort_resolution">Highest resolution</string>
+    <string name="smb_sort_duration">Longest duration</string>
+    <string name="smb_sort_size">Largest file size</string>
+    <string name="smb_reading_video_info">Reading video information… %1$d/%2$d</string>
+    <string name="smb_entry_resolution">%1$d×%2$d</string>
     <string name="smb_current_folder">Current folder: %1$s</string>
     <string name="smb_entries_count">%1$d folders and playable videos</string>
     <string name="smb_empty_folder">No folders or supported videos found here.</string>
@@ -124,6 +133,12 @@
     <string name="smb_scan_dialog_server">Server: %1$s</string>
     <string name="smb_scan_forget_device_title">Forget SMB device?</string>
     <string name="smb_scan_forget_device_message">Remove all saved credentials for %1$s from this device?</string>
+    <string name="smb_cache_clear_button">Clear SMB cache (%1$s)</string>
+    <string name="smb_cache_clear_content_description">Clear cached SMB video information and thumbnails</string>
+    <string name="smb_cache_clear_title">Clear SMB cache?</string>
+    <string name="smb_cache_clear_message">This removes saved video information and thumbnails (%1$s). They will be read again when you browse SMB folders. The cache is limited to %2$s; older items are removed automatically.</string>
+    <string name="smb_cache_clear_confirm">Clear</string>
+    <string name="smb_cache_cleared">SMB cache cleared</string>
     <string name="error_invalid_url">Invalid URL</string>
     <string name="error_unsupported_launch_intent">Unsupported launch intent</string>
     <string name="error_unknown">unknown error</string>

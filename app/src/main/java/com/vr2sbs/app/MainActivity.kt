@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.text.format.Formatter
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,10 +23,12 @@ import com.vr2sbs.source.SourceDescriptor
 import com.vr2sbs.source.SourceResolver
 import com.vr2sbs.tracking.OneXrConnectionProbe
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private enum class ConnectionStatusUi(
@@ -41,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private val resolver = SourceResolver()
     private val errors by lazy { ErrorUiController(this) }
     private val trackingManager by lazy { (application as Vr2sbsApplication).trackingSessionManager }
+    private val smbMediaCache by lazy { (application as Vr2sbsApplication).smbMediaCache }
     private val playbackSession by lazy { (application as Vr2sbsApplication).playbackSessionOwner }
     private var connectionProbeJob: Job? = null
     private var pendingResumeRequest = false
@@ -83,6 +87,9 @@ class MainActivity : AppCompatActivity() {
         binding.newReleasesButton.setOnClickListener {
             openReleasesPage()
         }
+        binding.clearSmbCacheButton.setOnClickListener {
+            confirmClearSmbCache()
+        }
 
         renderConnectionStatusUi(ConnectionStatusUi.CHECKING)
         setRuntimeStatus(getString(R.string.status_glasses_required))
@@ -95,6 +102,11 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         startConnectionProbeLoop()
         maybeResumeActivePlaybackSession(consumeOnMiss = true)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateSmbCacheButton()
     }
 
     override fun onStop() {
@@ -254,6 +266,32 @@ class MainActivity : AppCompatActivity() {
         } catch (_: ActivityNotFoundException) {
             Toast.makeText(this, R.string.error_open_releases, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun updateSmbCacheButton() {
+        val used = Formatter.formatShortFileSize(this, smbMediaCache.totalBytes())
+        binding.clearSmbCacheButton.text = getString(R.string.smb_cache_clear_button, used)
+    }
+
+    private fun confirmClearSmbCache() {
+        val used = Formatter.formatShortFileSize(this, smbMediaCache.totalBytes())
+        val capacity = Formatter.formatShortFileSize(this, smbMediaCache.capacityBytes)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.smb_cache_clear_title)
+            .setMessage(getString(R.string.smb_cache_clear_message, used, capacity))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.smb_cache_clear_confirm) { _, _ ->
+                lifecycleScope.launch {
+                    withContext(Dispatchers.IO) { smbMediaCache.clear() }
+                    updateSmbCacheButton()
+                    Toast.makeText(
+                        this@MainActivity,
+                        R.string.smb_cache_cleared,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .show()
     }
 
     private fun renderConnectionStatusUi(nextStatus: ConnectionStatusUi) {

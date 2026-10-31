@@ -29,14 +29,29 @@
             android:scaleType="centerCrop"
             android:src="@drawable/ic_smb_video" />
 
-        <TextView
-            android:id="@+id/smbEntryName"
-            style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:maxLines="2"
-            android:textColor="@color/launcher_text_primary" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/smbEntryName"
+                style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:textColor="@color/launcher_text_primary" />
+
+            <TextView
+                android:id="@+id/smbEntryMeta"
+                style="@style/TextAppearance.Vr2sbs.Launcher.EntryMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="2" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

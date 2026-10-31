@@ -47,6 +47,66 @@ class SmbBrowserPolicyTest {
     }
 
     @Test
+    fun sortsByResolutionWithUnknownMetadataLast() {
+        val entries = listOf(
+            entry("small.mp4", modified = 100L),
+            entry("unknown.mkv", modified = 200L),
+            entry("large.mp4", modified = 300L),
+            entry("middle.mp4", modified = 400L)
+        )
+        val metadata = mapOf(
+            "small.mp4" to SmbVideoMetadata(1920, 1080, 60_000L),
+            "large.mp4" to SmbVideoMetadata(7680, 3840, 60_000L),
+            "middle.mp4" to SmbVideoMetadata(3840, 1920, 60_000L)
+        )
+
+        val sorted = sortSmbEntries(entries, SmbSortOrder.RESOLUTION_DESC) {
+            metadata[it.name]
+        }.map { it.name }
+
+        assertEquals(
+            listOf("large.mp4", "middle.mp4", "small.mp4", "unknown.mkv"),
+            sorted
+        )
+    }
+
+    @Test
+    fun sortsByDurationAndSizeDescending() {
+        val entries = listOf(
+            entry("short.mp4", modified = 100L),
+            entry("long.mp4", modified = 200L),
+            entry("unknown.mp4", modified = 300L)
+        )
+        val metadata = mapOf(
+            "short.mp4" to SmbVideoMetadata(1920, 1080, 30_000L),
+            "long.mp4" to SmbVideoMetadata(1920, 1080, 3_600_000L)
+        )
+
+        val byDuration = sortSmbEntries(entries, SmbSortOrder.DURATION_DESC) {
+            metadata[it.name]
+        }.map { it.name }
+        assertEquals(listOf("long.mp4", "short.mp4", "unknown.mp4"), byDuration)
+
+        val sized = listOf(
+            entry("small.mp4", size = 10L),
+            entry("large.mp4", size = 1_000L),
+            entry("zero.mp4", size = 0L)
+        )
+        val bySize = sortSmbEntries(sized, SmbSortOrder.SIZE_DESC).map { it.name }
+        assertEquals(listOf("large.mp4", "small.mp4", "zero.mp4"), bySize)
+    }
+
+    @Test
+    fun sortOrderFallsBackToNewestFirstForUnknownPreference() {
+        assertEquals(SmbSortOrder.NEWEST_FIRST, SmbSortOrder.fromStoredValue(null))
+        assertEquals(SmbSortOrder.NEWEST_FIRST, SmbSortOrder.fromStoredValue("bogus"))
+        assertEquals(
+            SmbSortOrder.RESOLUTION_DESC,
+            SmbSortOrder.fromStoredValue("RESOLUTION_DESC")
+        )
+    }
+
+    @Test
     fun profileIdentityIsStableButAccountSpecific() {
         val first = SmbProfile.create("nas.local", "media", "", "neo", "one")
         val sameIdentity = SmbProfile.create("NAS.LOCAL", "MEDIA", "", "NEO", "two")
@@ -56,11 +116,16 @@ class SmbBrowserPolicyTest {
         assertNotEquals(first.id, anotherAccount.id)
     }
 
-    private fun entry(name: String, directory: Boolean = false, modified: Long = 0L) = MediaEntry(
+    private fun entry(
+        name: String,
+        directory: Boolean = false,
+        modified: Long = 0L,
+        size: Long = 100L
+    ) = MediaEntry(
         uri = "smb://nas/media/$name${if (directory) "/" else ""}",
         name = name,
         directory = directory,
-        size = if (directory) 0L else 100L,
+        size = if (directory) 0L else size,
         modifiedTime = modified
     )
 }

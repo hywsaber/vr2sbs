@@ -5,8 +5,8 @@ plugins {
     id("com.github.triplet.play")
 }
 
-val defaultVersionName = "0.2.3"
-val defaultVersionCode = 3
+val defaultVersionName = "0.2.4"
+val defaultVersionCode = 4
 
 val releaseVersionName = System.getenv("VR2XR_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
 val releaseVersionCodeRaw = System.getenv("VR2XR_VERSION_CODE")?.trim()?.takeIf { it.isNotEmpty() }

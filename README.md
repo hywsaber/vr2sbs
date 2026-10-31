@@ -6,6 +6,58 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.2.4 release notes — faster SMB browsing, on-device cache, and smoother playback
+
+This update makes SMB folders open quickly even with large libraries: video details are read in parallel and shown before thumbnails, both are remembered on the device, and a new home-screen control clears the cache. It also adds the sort menu and fixes two playback interruptions plus the lost folder position when returning from the player. IMU calibration now also works on devices that only configure the glasses' ECM USB link.
+
+### New: video details under each SMB file name
+
+- Every video row now shows a details line in a smaller font (13sp versus the 15sp file name), and the file name has moved up to make room.
+- The details line shows resolution and duration (for example `3840×1920 · 12:34`) and, on a second line, file size and modified date (for example `1.2 GB · 2026-10-31`).
+- Details for the whole folder are read in parallel, four files at a time, and each row updates as soon as its own information arrives. Thumbnails are only requested after this information pass finishes, so the details are visible first. Size and modified date come straight from the folder listing and appear immediately.
+- Rotation metadata is applied, so portrait videos report the width and height you actually see. Fields that cannot be read are simply omitted.
+
+### New: persistent SMB media cache
+
+- Resolution, duration, size, modified date, and thumbnails are now saved on the device for each remembered SMB account and folder, so reopening the app or a folder no longer reads every file again.
+- Each entry is validated against the file's current size and modified date from the folder listing. Unchanged files use the saved information and thumbnail immediately; a changed file is re-read and its entry replaced.
+- Thumbnails are stored in app-private storage with a **128 MiB** total limit. When the limit is reached, the least recently used entries are removed automatically, so the cache never grows without bound.
+- The launcher now has a **Clear SMB cache (used size)** button. It shows how much space the cache currently uses and clears it after confirmation; the next folder visit downloads the information and thumbnails again. Clearing the cache does not remove saved SMB accounts, sort order, or projection settings.
+
+### Faster and more reliable thumbnails
+
+- Metadata reads use a 64 KiB read-ahead buffer, so the many small reads made by `MediaMetadataRetriever` are served from far fewer SMB round trips.
+- A thumbnail that fails because of a transient SMB error is retried, and a video whose preview frame at 1 second cannot be decoded falls back to its first frame.
+- Thumbnails are kept in the persistent cache, so switching to the player and back no longer leaves rows blank while they reload.
+- Queued previews for rows that have already scrolled off screen are skipped instead of blocking the previews you are looking at.
+
+### New: sort menu replaces the fixed "Newest first" control
+
+- The sort button now opens a **Sort by** dialog with five orders:
+  - **Newest first** / **Oldest first** — by modified date, matching the previous behavior.
+  - **Highest resolution**, **Longest duration**, and **Largest file size**.
+- Folders always stay above videos. Videos with an unknown value sort last, then by name.
+- The choice is saved and restored the next time the SMB browser opens.
+- Resolution and duration require reading each file's metadata. When either is selected, the app reads the files that are not cached yet, shows `Reading video information… n/m` in the status line, then re-sorts once while keeping the current scroll position. Files that cannot be read are remembered so they are not retried in a loop; sorting by size or date needs no probing at all. With cached information, the correct order appears immediately.
+
+### Fixes
+
+- **Switching SBS output no longer pauses playback.** Rebuilding the glasses presentation briefly removes the video surface; the app now treats that moment as part of the output rebuild instead of as an output interruption, so playback keeps running and continues on the rebuilt presentation. A short settle guard also prevents the routing watchdog from tearing down a presentation whose surface is still attaching.
+- **Slow-network buffering now shows a prompt.** If an SMB or HTTP source stays in buffering while playback should be running, a dialog explains that the connection is slower than the video needs and that playback will continue automatically. The prompt appears after 2.5 seconds when rebuffering during playback and after 8 seconds during the initial load. It closes automatically when playback recovers, and choosing **Keep waiting** does not make it reappear during the same stall.
+- **Returning from the player keeps your place in the SMB folder.** The browser remembers the first visible item and its pixel offset, restores them after the list is rebuilt, and draws a blue outline around the file that was just played, scrolling it into view if it is off-screen. The same position preservation applies when changing the sort order.
+- **IMU calibration works when Android only configures the glasses' ECM USB link.** XREAL One exposes two USB Ethernet functions: NCM, which Android normally configures at `169.254.2.1`, and ECM at `169.254.1.1`. Some devices only configure the ECM link, so the app previously connected to an address with no route and reported a calibration error. During calibration the app now inspects the IPv4 link-local routes and keeps `169.254.2.1` whenever that address is routable. It switches to `169.254.1.1` only when the default address has no route on any configured link. Devices that already calibrate normally therefore use exactly the same connection path as before.
+
+### Installation and compatibility
+
+- versionName `0.2.4`, versionCode `4`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.2.3 (same signing identity); saved SMB profiles, sort order, and projection settings are kept.
+- The first visit to each folder after upgrading reads its details and thumbnails again; later visits reuse the on-device cache. Cached media lives in the app's private storage and can be cleared from the launcher.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.2.3 release notes — major image-quality fix
 
 **This is the most significant image-quality update in vr2sbs so far.** It fixes a long-standing defect where the glasses showed the right eye at roughly half the horizontal resolution of the left eye, while vertical resolution looked normal.
