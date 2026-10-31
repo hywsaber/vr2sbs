@@ -1,6 +1,7 @@
 package com.vr2sbs.app
 
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
@@ -913,14 +914,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun showBufferingDialog() {
         if (isFinishing || isDestroyed || bufferingDialog != null) return
-        val dialog = MaterialAlertDialogBuilder(
-            this,
-            R.style.ThemeOverlay_Vr2sbs_Player_SettingsDialog
-        )
-            .setTitle(R.string.player_buffering_title)
-            .setMessage(R.string.player_buffering_message)
-            .setPositiveButton(R.string.player_buffering_wait, null)
-            .create()
+        val dialog = createBufferingDialog(this)
         dialog.setOnDismissListener {
             bufferingDialog = null
             bufferingPromptDismissedForCurrentStall = true
@@ -929,6 +923,7 @@ class PlayerActivity : AppCompatActivity() {
         }
         bufferingDialog = dialog
         dialog.show()
+        Log.i(TAG, "Network buffering prompt shown")
         applyPlayerSettingsDialogStyle(dialog)
     }
 
@@ -1905,6 +1900,16 @@ internal fun initialImageIndex(
     }
     return if (matchingIndex >= 0) matchingIndex else 0
 }
+
+internal fun createBufferingDialog(context: Context): AlertDialog =
+    MaterialAlertDialogBuilder(
+        context,
+        R.style.ThemeOverlay_Vr2sbs_Player_SettingsDialog
+    )
+        .setTitle(R.string.player_buffering_title)
+        .setMessage(R.string.player_buffering_message)
+        .setPositiveButton(R.string.player_buffering_wait, null)
+        .create()
 
 private const val EXTERNAL_RECONNECT_WATCHDOG_MS = 500L
 private const val EXTERNAL_PRESENTATION_SETTLE_MS = 2000L

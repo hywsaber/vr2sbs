@@ -543,6 +543,8 @@ class SmbBrowserActivity : AppCompatActivity() {
     private fun sortOrderLabelRes(order: SmbSortOrder): Int = when (order) {
         SmbSortOrder.NEWEST_FIRST -> R.string.smb_sort_newest_first
         SmbSortOrder.OLDEST_FIRST -> R.string.smb_sort_oldest_first
+        SmbSortOrder.NAME_ASC -> R.string.smb_sort_name_asc
+        SmbSortOrder.NAME_DESC -> R.string.smb_sort_name_desc
         SmbSortOrder.RESOLUTION_DESC -> R.string.smb_sort_resolution
         SmbSortOrder.DURATION_DESC -> R.string.smb_sort_duration
         SmbSortOrder.SIZE_DESC -> R.string.smb_sort_size

@@ -6,6 +6,33 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.3.2 release notes — filename sorting and a buffering crash fix
+
+SMB folders can now be sorted by file name, and a crash that could close the app when the network buffering prompt appeared has been fixed.
+
+### New: sort SMB folders by file name
+
+- The **Sort by** dialog now includes **File name (A–Z)** and **File name (Z–A)** alongside the existing date, resolution, duration, and size orders.
+- Folders stay above files in both directions. Names are compared case-insensitively, so `Alpha.mp4` and `alpha.mp4` keep a stable order.
+- The selected order is saved with the other SMB preferences and is restored the next time the browser opens.
+
+### Fixed: the network buffering prompt could crash the player
+
+- On some devices, frequent seeking or switching videos could trigger the network buffering prompt and immediately close the app with the system "keeps stopping" dialog, leaving the glasses on a frozen frame while audio continued.
+- The prompt's dialog theme pointed its title at a style that supplied text attributes only and no `layout_width`. Material's alert-dialog title view reads its layout parameters from that style, so inflating the title threw `InflateException: You must supply a layout_width attribute`.
+- The title now uses a widget style that inherits Material's own alert-dialog title style, so the **Network buffering** dialog and its **Keep waiting** button open normally while playback keeps running underneath.
+- Added a device regression test (`BufferingDialogInflationTest`) that creates and shows the dialog on the target device.
+
+### Installation and compatibility
+
+- versionName `0.3.2`, versionCode `8`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.3.1 (same signing identity); saved SMB accounts, folder bookmarks, the SMB cache, sort order, and projection settings are kept.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug Certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.3.1 release notes — playback survives a glasses disconnect
 
 Watching with the glasses unplugged by accident no longer interrupts the session. The player stays open, pauses at the moment the glasses drop, and shows a waiting message. Reconnect the glasses and the same video resumes automatically from that exact position — no need to pick the file again.
@@ -284,6 +311,7 @@ This repository is forked from [NeoNatural/vr2xr-neo](https://github.com/NeoNatu
 - **Native SMB2/SMB3 playback** — Browse network shares with thumbnails and sorting, then stream and seek through large videos using native `libsmb2`, with `jcifs-ng` as a compatibility fallback.
 - **LAN SMB discovery** — Scan the local network for SMB servers, sign in once, and open a device's shares without typing a share name; remembered devices appear as quick-connect buttons.
 - **SMB folder bookmarks** — Save frequently used network folders from the browser and reopen them from the top of the Open SMB share page with one tap.
+- **SMB filename sorting** — Sort SMB folders by file name A–Z or Z–A, with folders always first and the chosen order remembered.
 - **VR180 photos** — Browse photos next to videos in SMB folders, open side-by-side VR180 stills in the SBS renderer, and step through the folder with the player's previous/next controls.
 - **Broader VR180 format support** — Play half-equirectangular, equidistant-fisheye, and equisolid-fisheye content, with independent view and lens FOV tuning.
 - **Faster view control** — Drag directly to adjust the view, pinch with two fingers to change FOV, use dedicated 5° FOV buttons, and double-tap to recenter.
@@ -298,7 +326,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 | Area | Changes in this fork |
 | --- | --- |
 | Video and photo sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files and photos use Android's system document picker. VR180 photos open in the same SBS renderer as videos. Bilibili share text is parsed into a video link and played through the existing player, with optional in-app sign-in on Bilibili's own page for member qualities. |
-| SMB browsing | Added server/share/domain/account login, folder navigation, video and photo filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. Added folder bookmarks that reopen directly from the top of the Open SMB share page. |
+| SMB browsing | Added server/share/domain/account login, folder navigation, video and photo filtering, thumbnails, date/name/resolution/duration/size sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. Added folder bookmarks that reopen directly from the top of the Open SMB share page. |
 | SMB playback | Added a Media3 SMB data source with buffered random access for playback and seeking. Native `libsmb2` is preferred for throughput; `jcifs-ng` is retained as a fallback. |
 | Credential privacy | Saved SMB passwords are encrypted with AES-GCM using a non-exportable Android Keystore key. Server metadata stays in the app's private storage. |
 | Projection modes | Added VR180 fisheye equidistant and fisheye equisolid rendering in addition to the original half-equirectangular mode. |
@@ -326,7 +354,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 - **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle that can skip calibration when disabled
 - **Multiple media sources**: Local files, `http(s)` URLs, Bilibili share links, Android share intents, and built-in SMB2/SMB3 network shares, including VR180 photos
 - **Bilibili share playback**: Paste share text to open the video directly, optionally sign in inside the app for the highest available quality, and reuse the normal player and glasses output
-- **SMB media browser**: Browse folders, show video and photo thumbnails, sort by modification date, and remember multiple server profiles
+- **SMB media browser**: Browse folders, show video and photo thumbnails, sort by date, file name, resolution, duration, or size, and remember multiple server profiles
 - **VR180 photo playback**: Open equirectangular photos in the SBS renderer and use previous/next to step through the folder
 - **SMB device discovery**: Scan the local Wi-Fi/Ethernet network for SMB servers, resolve NetBIOS names, and open a device's shares without entering a share name
 - **High-throughput SMB playback**: Native `libsmb2` random-access reading and seeking, with a `jcifs-ng` compatibility fallback
@@ -385,7 +413,7 @@ For a share you already know, tap **Open SMB share** and enter the server host/I
 
 To discover servers instead, tap **Scan SMB**: the app scans the current Wi-Fi/Ethernet network and lists SMB devices as they respond, showing NetBIOS names when available. Tap a device, enter the username and password (plus an optional domain), and the app opens the device's share list directly — no share name needed. Enable **Remember this account securely** to save the device; remembered devices appear at the top of the scan screen and can be removed with a long-press.
 
-The browser shows folders and supported videos, generates thumbnails when possible, and can sort entries newest-first or oldest-first. Video data is read directly from the SMB server and is not copied to the developer or an intermediary service.
+The browser shows folders and supported videos, generates thumbnails when possible, and can sort entries by date, file name (A–Z or Z–A), resolution, duration, or size. Video data is read directly from the SMB server and is not copied to the developer or an intermediary service.
 
 <p align="center">
   <img src="assets/readme-gifs/vr2sbs-player-1.gif" alt="Browse and open videos from an SMB share" width="36%">

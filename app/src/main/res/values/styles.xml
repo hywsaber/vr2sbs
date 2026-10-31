@@ -84,6 +84,13 @@
         <item name="android:textColor">@color/player_controls_text_primary</item>
     </style>
 
+    <!-- The alert dialog title view uses its style for layout params as well as text
+         appearance, so this must inherit Material's title text widget style. -->
+    <style name="Widget.Vr2sbs.Player.DialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textAppearance">@style/TextAppearance.Vr2sbs.Player.DialogTitle</item>
+        <item name="android:textColor">@color/player_controls_text_primary</item>
+    </style>
+
     <style name="Widget.Vr2sbs.Player.SettingsButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:minHeight">@dimen/player_controls_button_min_height</item>
@@ -149,6 +156,6 @@
         <item name="android:textColorPrimary">@color/player_controls_text_primary</item>
         <item name="buttonBarPositiveButtonStyle">@style/Widget.Vr2sbs.Player.DialogCloseButton</item>
         <item name="colorSurface">@color/player_dialog_surface</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.Vr2sbs.Player.DialogTitle</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/Widget.Vr2sbs.Player.DialogTitle</item>
     </style>
 </resources>

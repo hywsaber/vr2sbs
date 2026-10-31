@@ -93,6 +93,35 @@ class SmbBrowserPolicyTest {
     }
 
     @Test
+    fun sortsByNameAscendingWithFoldersFirst() {
+        val entries = listOf(
+            entry("zulu.mp4"),
+            entry("Alpha.mp4"),
+            entry("beta", directory = true),
+            entry("alpha-folder", directory = true),
+            entry("ignored.txt")
+        )
+
+        val sorted = sortSmbEntries(entries, SmbSortOrder.NAME_ASC).map { it.name }
+
+        assertEquals(listOf("alpha-folder", "beta", "Alpha.mp4", "zulu.mp4"), sorted)
+    }
+
+    @Test
+    fun sortsByNameDescendingWithFoldersFirst() {
+        val entries = listOf(
+            entry("zulu.mp4"),
+            entry("Alpha.mp4"),
+            entry("beta", directory = true),
+            entry("alpha-folder", directory = true)
+        )
+
+        val sorted = sortSmbEntries(entries, SmbSortOrder.NAME_DESC).map { it.name }
+
+        assertEquals(listOf("beta", "alpha-folder", "zulu.mp4", "Alpha.mp4"), sorted)
+    }
+
+    @Test
     fun sortsByResolutionWithUnknownMetadataLast() {
         val entries = listOf(
             entry("small.mp4", modified = 100L),
@@ -149,6 +178,10 @@ class SmbBrowserPolicyTest {
         assertEquals(
             SmbSortOrder.RESOLUTION_DESC,
             SmbSortOrder.fromStoredValue("RESOLUTION_DESC")
+        )
+        assertEquals(
+            SmbSortOrder.NAME_ASC,
+            SmbSortOrder.fromStoredValue("NAME_ASC")
         )
     }
 

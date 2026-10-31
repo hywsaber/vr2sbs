@@ -142,6 +142,8 @@
     <string name="smb_sort_title">Sort by</string>
     <string name="smb_sort_newest_first">Newest first</string>
     <string name="smb_sort_oldest_first">Oldest first</string>
+    <string name="smb_sort_name_asc">File name (A–Z)</string>
+    <string name="smb_sort_name_desc">File name (Z–A)</string>
     <string name="smb_sort_resolution">Highest resolution</string>
     <string name="smb_sort_duration">Longest duration</string>
     <string name="smb_sort_size">Largest file size</string>

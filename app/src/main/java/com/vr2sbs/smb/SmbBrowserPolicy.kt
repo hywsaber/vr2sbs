@@ -7,6 +7,8 @@ import java.util.Locale
 enum class SmbSortOrder {
     NEWEST_FIRST,
     OLDEST_FIRST,
+    NAME_ASC,
+    NAME_DESC,
     RESOLUTION_DESC,
     DURATION_DESC,
     SIZE_DESC;
@@ -40,12 +42,16 @@ fun sortSmbEntries(
     } else {
         emptyMap()
     }
+    val comparator = compareBy<MediaEntry> { !it.directory }
+        .thenComparator { left, right ->
+            compareEntries(left, right, order, metadataByUri)
+        }
     return visibleEntries.sortedWith(
-        compareBy<MediaEntry> { !it.directory }
-            .thenComparator { left, right ->
-                compareEntries(left, right, order, metadataByUri)
-            }
-            .thenBy { it.name.lowercase(Locale.ROOT) }
+        if (order == SmbSortOrder.NAME_DESC) {
+            comparator.thenByDescending { it.name.lowercase(Locale.ROOT) }
+        } else {
+            comparator.thenBy { it.name.lowercase(Locale.ROOT) }
+        }
     )
 }
 
@@ -63,6 +69,9 @@ private fun compareEntries(
     return when (order) {
         SmbSortOrder.NEWEST_FIRST,
         SmbSortOrder.OLDEST_FIRST -> compareModifiedTime(left, right, order)
+
+        SmbSortOrder.NAME_ASC,
+        SmbSortOrder.NAME_DESC -> 0
 
         SmbSortOrder.RESOLUTION_DESC -> compareDescendingKnownLast(
             metadataByUri[left.uri]?.pixelCount,
