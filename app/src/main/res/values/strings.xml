@@ -56,6 +56,8 @@
     <string name="player_image_load_failed">Unable to load photo: %1$s</string>
     <string name="player_play_content_description">Play</string>
     <string name="player_pause_content_description">Pause</string>
+    <string name="player_glasses_waiting_resume">Glasses disconnected — paused at %1$s. Reconnect the glasses to continue from here.</string>
+    <string name="player_glasses_waiting">Glasses disconnected. Reconnect the glasses to continue.</string>
     <string name="player_default_time">00:00</string>
     <string name="player_timeline_content_description">Playback timeline</string>
     <string name="player_touchpad_content_description">Manual touch tracking area</string>

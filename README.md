@@ -6,6 +6,30 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.3.1 release notes — playback survives a glasses disconnect
+
+Watching with the glasses unplugged by accident no longer interrupts the session. The player stays open, pauses at the moment the glasses drop, and shows a waiting message. Reconnect the glasses and the same video resumes automatically from that exact position — no need to pick the file again.
+
+### Playback continues after the glasses reconnect
+
+- If the glasses are unplugged or disconnected during playback, the video pauses immediately and the player page stays open. Nothing returns to the home screen, and the source is not closed.
+- A message appears on the player: **Glasses disconnected — paused at 12:34. Reconnect the glasses to continue from here.**
+- When the glasses are reconnected, the app rebuilds the glasses output, seeks back to the position where the connection dropped, and resumes playback automatically.
+- If you had already paused the video yourself before the glasses dropped, the app only waits for the reconnect and does not start playback on its own. Press play when you are ready.
+- While waiting, the timeline and the 15-second seek buttons still work; playback continues from the adjusted position after reconnecting.
+- While waiting, the play/pause button acts as a switch for the automatic resume, so you can cancel or re-arm it at any time.
+- Photo viewing is unaffected, and selecting a different source clears the waiting state.
+
+### Installation and compatibility
+
+- versionName `0.3.1`, versionCode `7`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.3.0 (same signing identity); saved SMB accounts, folder bookmarks, the SMB cache, sort order, and projection settings are kept.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug Certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.3.0 release notes — Bilibili share playback
 
 **This is the biggest addition to vr2sbs's list of sources so far: you can now play videos straight from Bilibili share text.** Paste everything you copied from the Bilibili app — title, description, and link — and vr2sbs strips the surrounding text, resolves the video, and plays it at the highest quality your Bilibili account and phone can support. From there nothing changes: the same player, projection controls, and XREAL glasses output that every other source uses.
@@ -263,6 +287,7 @@ This repository is forked from [NeoNatural/vr2xr-neo](https://github.com/NeoNatu
 - **VR180 photos** — Browse photos next to videos in SMB folders, open side-by-side VR180 stills in the SBS renderer, and step through the folder with the player's previous/next controls.
 - **Broader VR180 format support** — Play half-equirectangular, equidistant-fisheye, and equisolid-fisheye content, with independent view and lens FOV tuning.
 - **Faster view control** — Drag directly to adjust the view, pinch with two fingers to change FOV, use dedicated 5° FOV buttons, and double-tap to recenter.
+- **Glasses reconnect continuity** — If the glasses drop mid-playback, the player stays open and the video waits at the disconnect position; reconnecting resumes the same file from there.
 - **Smoother setup flow** — Enter calibration only when tracking requires it, launch calibration automatically after connection, and optionally hide the recurring Full SBS reminder.
 - **Security and maintainability** — Encrypt saved SMB passwords with Android Keystore, document bundled dependencies and privacy behavior, and cover the new policies with unit tests.
 
@@ -310,7 +335,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 - **Live projection tuning**: Change view FOV and fisheye lens FOV while playing; the projection mode and SBS output format are remembered, and the view FOV starts at 58° for each playback
 - **Phone playback controls**: Play/pause, 15-second seek, timeline scrubbing, projection controls, and a touchpad for view adjustment
 - **Guided tracking setup**: Automatic calibration entry when needed, followed by an optional Full SBS reminder
-- **Durable playback sessions**: Playback pauses when glasses output disappears and can resume after the output returns
+- **Durable playback sessions**: Playback pauses when the glasses disconnect and the player stays open; when the glasses reconnect, the same video resumes from the disconnection position
 
 ## Requirements
 
@@ -336,7 +361,7 @@ Phone-only playback is intentionally unsupported. The app does not switch the gl
 5. Tap **Continue to VR Player**. The app applies Zero View automatically.
 6. Use the phone controls to play, pause, seek, adjust projection, and change the view.
 
-If the glasses are disconnected during playback, the video pauses and waits for the glasses output to return.
+If the glasses are disconnected during playback, the video pauses, the player stays open, and a message shows the position where it stopped. Reconnect the glasses and playback continues automatically from that position; if you had paused before the disconnect, it waits for you to press play.
 
 ## Player controls
 

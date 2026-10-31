@@ -68,6 +68,12 @@
         <item name="android:textSize">@dimen/player_controls_time_text_size</item>
     </style>
 
+    <style name="TextAppearance.Vr2sbs.Player.GlassesWaitBanner" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/player_controls_text_primary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
     <style name="TextAppearance.Vr2sbs.Player.DialogItem" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textColor">@color/player_controls_text_primary</item>

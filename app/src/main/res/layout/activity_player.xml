@@ -20,6 +20,20 @@
         android:paddingEnd="@dimen/player_controls_panel_horizontal_padding"
         android:paddingBottom="@dimen/player_controls_panel_bottom_safe_padding">
 
+        <TextView
+            android:id="@+id/glassesWaitBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/player_glasses_banner_bottom_margin"
+            android:background="@drawable/bg_glasses_wait_banner"
+            android:gravity="center"
+            android:paddingStart="@dimen/player_glasses_banner_horizontal_padding"
+            android:paddingTop="@dimen/player_glasses_banner_vertical_padding"
+            android:paddingEnd="@dimen/player_glasses_banner_horizontal_padding"
+            android:paddingBottom="@dimen/player_glasses_banner_vertical_padding"
+            android:textAppearance="@style/TextAppearance.Vr2sbs.Player.GlassesWaitBanner"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"

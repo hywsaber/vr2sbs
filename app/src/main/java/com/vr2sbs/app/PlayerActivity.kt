@@ -81,6 +81,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private val routeStateMachine = DisplayRouteStateMachine()
     private var routeState: DisplayRouteState = DisplayRouteState.NoOutput
+    private val glassesReconnect = GlassesReconnectPolicy()
+    private var lastGlassesDisplayPresent: Boolean? = null
 
     private var decoderSummary: String = "unknown"
     private var internalSurface: Surface? = null
@@ -197,6 +199,7 @@ class PlayerActivity : AppCompatActivity() {
                         if (!canProcessRouting("display-mode-changed")) {
                             return@runOnUiThread
                         }
+                        handleGlassesDisplayChanged(present = mode != null)
                         syncExternalPresentation()
                         updateRouting("display-mode-changed")
                     }
@@ -280,6 +283,7 @@ class PlayerActivity : AppCompatActivity() {
         attachTrackingCollectors()
         attachPlaybackSessionCollector()
         updateRouting("activity-start")
+        updateGlassesWaitBanner()
         updateDiagnostics()
         startExternalReconnectWatchdog()
     }
@@ -360,6 +364,10 @@ class PlayerActivity : AppCompatActivity() {
         }
         exitImageMode()
         val currentSessionSource = playbackSession.state.value.source
+        if (currentSessionSource?.playbackKey != resolvedSource.playbackKey) {
+            glassesReconnect.cancel()
+            updateGlassesWaitBanner()
+        }
         val shouldForceReset = shouldForceSourceReset(
             hasSavedInstanceState = false,
             resumeExisting = launchRequest.resumeExisting,
@@ -617,11 +625,15 @@ class PlayerActivity : AppCompatActivity() {
         val target = (controller.currentPosition + deltaMs).coerceAtLeast(0L)
         val boundedTarget = if (durationMs != null) target.coerceAtMost(durationMs) else target
         controller.seekTo(boundedTarget)
+        glassesReconnect.onUserSeek(boundedTarget)
+        updateGlassesWaitBanner()
         refreshTimelineUi()
     }
 
     private fun enterImageMode(source: SourceDescriptor, restoredIndex: Int) {
         isImageMode = true
+        glassesReconnect.cancel()
+        updateGlassesWaitBanner()
         imageBaseSource = source
         imagePlaylist = if (source.playlist.isNotEmpty()) {
             source.playlist
@@ -767,6 +779,18 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun togglePlayPause() {
         val controller = mediaController ?: return
+        if (glassesReconnect.isWaitingForReconnect) {
+            // While waiting for the glasses, play/pause only controls whether
+            // playback should continue once the output is back.
+            if (glassesReconnect.pendingResumePositionMs != null) {
+                glassesReconnect.onUserPause()
+            } else {
+                glassesReconnect.onUserPlay(controller.currentPosition)
+            }
+            updateGlassesWaitBanner()
+            updatePlayPauseButton()
+            return
+        }
         if (controller.isPlaying) {
             controller.pause()
         } else {
@@ -784,6 +808,8 @@ class PlayerActivity : AppCompatActivity() {
             pendingTimelinePositionMs.coerceAtLeast(0L)
         }
         controller.seekTo(target)
+        glassesReconnect.onUserSeek(target)
+        updateGlassesWaitBanner()
         refreshTimelineUi()
     }
 
@@ -828,8 +854,10 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun updatePlayPauseButton() {
         val isPlaying = mediaController?.isPlaying == true
-        val iconRes = if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
-        val contentDescription = if (isPlaying) {
+        val autoResumePending = glassesReconnect.pendingResumePositionMs != null
+        val showPause = isPlaying || autoResumePending
+        val iconRes = if (showPause) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+        val contentDescription = if (showPause) {
             getString(R.string.player_pause_content_description)
         } else {
             getString(R.string.player_play_content_description)
@@ -1617,12 +1645,82 @@ class PlayerActivity : AppCompatActivity() {
             if (externalSurfaceRebound) {
                 playbackSession.showPausedFrameIfExpected()
             }
+            resumeAfterGlassesReconnectIfNeeded()
             playbackSession.resumeIfExpected()
         }
 
         maybeEnsurePausedFrameVisibility()
         renderRouteStatus()
         updateDiagnostics()
+    }
+
+    /**
+     * Remembers the playback position when the glasses disappear. The player
+     * itself stays open; playback pauses and waits for the external surface.
+     */
+    private fun handleGlassesDisplayChanged(present: Boolean) {
+        val previous = lastGlassesDisplayPresent
+        lastGlassesDisplayPresent = present
+        if (previous == null || previous == present) {
+            return
+        }
+        if (present) {
+            // The resume itself waits for the rebuilt external surface and is
+            // handled by [resumeAfterGlassesReconnectIfNeeded].
+            return
+        }
+        if (isImageMode) {
+            return
+        }
+        val state = playbackSession.state.value
+        val source = state.source ?: return
+        val controller = mediaController
+        val positionMs = controller?.currentPosition ?: state.positionMs
+        val playbackInProgress = controller?.playWhenReady ?: state.expectedPlayWhenReady
+        glassesReconnect.onGlassesLost(
+            playbackInProgress = playbackInProgress,
+            positionMs = positionMs,
+            sourceKey = source.playbackKey
+        )
+        updateGlassesWaitBanner()
+    }
+
+    /**
+     * Once the glasses are back and the external surface is ready, continue the
+     * same video from the position where the connection dropped.
+     */
+    private fun resumeAfterGlassesReconnectIfNeeded() {
+        if (!glassesReconnect.isWaitingForReconnect) {
+            return
+        }
+        val sourceKey = playbackSession.state.value.source?.playbackKey.orEmpty()
+        val plan = glassesReconnect.onGlassesReturned(sourceKey)
+        updateGlassesWaitBanner()
+        if (plan == null) {
+            return
+        }
+        // Continue exactly where the connection dropped, then resume.
+        playbackSession.seekTo(plan.positionMs)
+        playbackSession.play()
+        updatePlayPauseButton()
+    }
+
+    private fun updateGlassesWaitBanner() {
+        val waiting = glassesReconnect.isWaitingForReconnect && !isImageMode
+        if (!waiting) {
+            binding.glassesWaitBanner.visibility = View.GONE
+            return
+        }
+        val positionMs = glassesReconnect.pendingResumePositionMs
+        binding.glassesWaitBanner.text = if (positionMs != null) {
+            getString(
+                R.string.player_glasses_waiting_resume,
+                formatPlaybackTime(positionMs)
+            )
+        } else {
+            getString(R.string.player_glasses_waiting)
+        }
+        binding.glassesWaitBanner.visibility = View.VISIBLE
     }
 
     private fun bindSurface(surface: Surface?, route: ActiveRoute): Boolean {

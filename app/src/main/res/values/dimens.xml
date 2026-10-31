@@ -54,6 +54,10 @@
     <dimen name="player_dialog_row_horizontal_padding">16dp</dimen>
     <dimen name="player_dialog_content_padding">18dp</dimen>
     <dimen name="player_dialog_option_text_size">16sp</dimen>
+    <dimen name="player_glasses_banner_corner_radius">14dp</dimen>
+    <dimen name="player_glasses_banner_horizontal_padding">18dp</dimen>
+    <dimen name="player_glasses_banner_vertical_padding">12dp</dimen>
+    <dimen name="player_glasses_banner_bottom_margin">16dp</dimen>
     <dimen name="player_dialog_corner_radius">24dp</dimen>
     <dimen name="player_dialog_window_inset_horizontal">16dp</dimen>
     <dimen name="player_dialog_window_inset_vertical">16dp</dimen>
