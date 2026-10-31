@@ -15,9 +15,22 @@ set -euo pipefail
 mode=files
 target=
 denylist="${XDG_CONFIG_HOME:-$HOME/.config}/vr2sbs/privacy-denylist.txt"
+denylist_explicit=0
 
 usage() {
-  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+  cat <<'EOF'
+Scans public project text for personal identifiers before a release.
+
+Usage:
+  tools/release/check_public_text.sh              # all tracked text files
+  tools/release/check_public_text.sh --file F     # one file (for example release notes)
+  tools/release/check_public_text.sh --commits R  # commit messages in range R (for example v1.0.0..v1.0.1)
+  tools/release/check_public_text.sh --denylist F # extra literal terms, never commit this file
+
+The default denylist path is ~/.config/vr2sbs/privacy-denylist.txt. Each
+non-comment line is matched literally. Exit status is 1 when anything is
+found and 0 otherwise.
+EOF
 }
 
 while [ $# -gt 0 ]; do
@@ -34,6 +47,7 @@ while [ $# -gt 0 ]; do
       ;;
     --denylist)
       denylist="${2:?--denylist needs a path}"
+      denylist_explicit=1
       shift 2
       ;;
     -h|--help)
@@ -51,6 +65,21 @@ done
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
 if [ "$mode" != "file" ] && [ -z "$repo_root" ]; then
   echo "error: run this inside the repository" >&2
+  exit 2
+fi
+
+if [ "$mode" = "file" ] && [ ! -f "$target" ]; then
+  echo "error: file not found: $target" >&2
+  exit 2
+fi
+
+if [ "$mode" = "commits" ] && ! git rev-list -n 1 "$target" >/dev/null 2>&1; then
+  echo "error: invalid commit range: $target" >&2
+  exit 2
+fi
+
+if [ "$denylist_explicit" -eq 1 ] && [ ! -f "$denylist" ]; then
+  echo "error: denylist not found: $denylist" >&2
   exit 2
 fi
 
