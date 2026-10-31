@@ -182,7 +182,7 @@ The app selects a display mode with the same resolution as the chosen output for
 
 **vr2sbs is an Android VR SBS video player for XREAL One and XREAL One Pro glasses.** It supports local files, HTTP(S) URLs, Android share intents, and SMB2/SMB3 network shares, with phone controls and IMU head tracking.
 
-This repository is a maintained fork of [Skarian/vr2xr](https://github.com/skarian/vr2xr). The original project and author are credited below; the fork-specific improvements are highlighted in [What this fork adds](#what-this-fork-adds).
+This repository is forked from [NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo), which continues [Skarian/vr2xr](https://github.com/skarian/vr2xr). It was renamed to vr2sbs and is maintained and optimized by [hywsaber](https://github.com/hywsaber). The original project and author are credited below; the fork-specific improvements are highlighted in [What this fork adds](#what-this-fork-adds).
 
 ## What this fork adds
 
@@ -318,6 +318,6 @@ The debug APK is generated under `app/build/outputs/apk/debug/`. More developmen
 
 ## Credits
 
-vr2xr was created by [Neil Skaria](https://github.com/skarian). This fork is maintained and optimized by [NeoNatural](https://github.com/NeoNatural).
+vr2xr was created by [Neil Skaria](https://github.com/skarian). This fork started from [NeoNatural](https://github.com/NeoNatural)'s modifications, was renamed to vr2sbs, and is maintained and optimized by [hywsaber](https://github.com/hywsaber).
 
-See the original project at [Skarian/vr2xr](https://github.com/skarian/vr2xr) and this fork at [NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo).
+See the original project at [Skarian/vr2xr](https://github.com/skarian/vr2xr), the upstream fork at [NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo), and this fork at [hywsaber/vr2sbs](https://github.com/hywsaber/vr2sbs).

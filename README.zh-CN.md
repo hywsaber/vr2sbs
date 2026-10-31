@@ -182,7 +182,7 @@
 
 **vr2sbs 是一款面向 XREAL One 和 XREAL One Pro 眼镜的 Android VR SBS 视频播放器。** 它支持本地文件、HTTP(S) 地址、Android 分享 Intent 和 SMB2/SMB3 网络共享，并提供手机端控制与 IMU 头部追踪。
 
-本仓库是 [Skarian/vr2xr](https://github.com/skarian/vr2xr) 的持续维护分支。原项目及作者信息见文末，本分支的重点增强如下。
+本仓库 Fork 自 [NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo)（该分支延续自 [Skarian/vr2xr](https://github.com/skarian/vr2xr)），更名为 vr2sbs，并由 [hywsaber](https://github.com/hywsaber) 维护和优化。原项目及作者信息见文末，本分支的重点增强如下。
 
 ## 本分支重点增强
 
@@ -320,6 +320,6 @@ git submodule update --init --recursive
 
 ## 致谢
 
-vr2xr 由 [Neil Skaria](https://github.com/skarian) 创建。本分支由 [NeoNatural](https://github.com/NeoNatural) 维护和优化。
+vr2xr 由 [Neil Skaria](https://github.com/skarian) 创建。本分支 Fork 自 [NeoNatural](https://github.com/NeoNatural) 的修改，更名为 vr2sbs，并由 [hywsaber](https://github.com/hywsaber) 维护和优化。
 
-原项目地址：[Skarian/vr2xr](https://github.com/skarian/vr2xr)；本分支地址：[NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo)。
+原项目地址：[Skarian/vr2xr](https://github.com/skarian/vr2xr)；上游分支地址：[NeoNatural/vr2xr-neo](https://github.com/NeoNatural/vr2xr-neo)；本分支地址：[hywsaber/vr2sbs](https://github.com/hywsaber/vr2sbs)。
