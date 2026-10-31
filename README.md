@@ -6,6 +6,33 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.3.3 release notes — glasses detected on every Wi-Fi network
+
+The app no longer shows **Not Connected** when the glasses are attached but Android has not brought up their USB network. Detection now also checks for the glasses USB device itself, and IMU calibration asks Android to provision the Ethernet control link on demand.
+
+### Fixed: glasses are detected regardless of the current Wi-Fi network
+
+- On some tablets, the app could show **Not Connected** and refuse to open content on certain Wi-Fi networks, even though the glasses were attached and casting worked in other apps.
+- The old check only counted the glasses as connected when Android had an IPv4 address on their USB Ethernet interface. Android provisions that interface on demand: when Wi-Fi is the validated default network, nothing requests Ethernet, so the interface keeps no IPv4 address and the check fails. On other networks the check appeared to pass only because switching networks briefly left the default network unsatisfied and Android brought Ethernet up.
+- Connection detection now also looks for the XREAL USB device itself (vendor ID `0x3318`), which is present whenever the glasses are plugged in. Casting runs over DisplayPort alt mode and does not depend on the Ethernet state, so USB presence is the reliable signal.
+- Added unit tests covering the combined USB and network detection.
+
+### Fixed: IMU calibration brings the control link up
+
+- With IMU head tracking enabled, calibration now registers an Ethernet network request before connecting. This makes Android start the Ethernet IpClient for the glasses, which obtains an IPv4 link-local address (`169.254.x.x`) even when no DHCP server answers.
+- The request stays registered while head tracking runs and is released when the tracking session stops, so the network is not torn down during calibration or playback.
+- Calibration waits up to 8 seconds for the link-local address, then selects `169.254.1.1` or `169.254.2.1` exactly as before.
+
+### Installation and compatibility
+
+- versionName `0.3.3`, versionCode `9`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.3.2 (same signing identity); saved SMB accounts, folder bookmarks, the SMB cache, sort order, and projection settings are kept.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug Certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.3.2 release notes — filename sorting and a buffering crash fix
 
 SMB folders can now be sorted by file name, and a crash that could close the app when the network buffering prompt appeared has been fixed.

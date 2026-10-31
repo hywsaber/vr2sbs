@@ -44,7 +44,7 @@ adb shell am start -n com.vr2sbs/com.vr2sbs.app.MainActivity
 | Launcher name | `vr2sbs` |
 | `applicationId` | `com.vr2sbs` |
 | Namespace / Kotlin packages | `com.vr2sbs` |
-| Default `versionName` / `versionCode` | `0.3.2` / `8` |
+| Default `versionName` / `versionCode` | `0.3.3` / `9` |
 | Debug APK | `app/build/outputs/apk/debug/app-debug.apk` |
 
 The `applicationId` intentionally differs from upstream `com.vr2xr` so this fork can be installed alongside vr2xr-neo. The namespace is also `com.vr2sbs`, so manifest component names resolve to this fork's own package. Release and publish tasks require `VR2XR_VERSION_NAME` and `VR2XR_VERSION_CODE` plus the signing variables; see [`docs/release-play.md`](docs/release-play.md).

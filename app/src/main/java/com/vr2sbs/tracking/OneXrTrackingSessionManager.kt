@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -39,6 +40,7 @@ class OneXrTrackingSessionManager(
 
     private var activeHost: String = endpoint.host
     private var client: OneXrClient = createClient(endpoint)
+    private val ethernetProvisioner = LinkLocalEthernetProvisioner(appContext)
 
     private val _pose = MutableStateFlow<PoseState?>(null)
     private val _sessionState = MutableStateFlow(client.sessionState.value)
@@ -146,32 +148,36 @@ class OneXrTrackingSessionManager(
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     suspend fun probeConnection(): OneXrConnectionProbe {
+        // The USB check is a binder call; keep it off the caller's (usually
+        // main) thread since this probe runs every couple of seconds.
+        val usbAttached = withContext(Dispatchers.IO) {
+            hasAttachedXrealUsbDevice(appContext)
+        }
         return runCatching {
             val routing = client.describeRouting()
-            val candidates = routing.networkCandidates
-            val addresses = routing.addressCandidates
-            val connected = candidates.isNotEmpty() || addresses.isNotEmpty()
-            val detail = if (connected) {
-                val names = candidates.map { it.interfaceName }.distinct()
-                if (names.isEmpty()) {
-                    "connected"
-                } else {
-                    "connected via ${names.joinToString(",")}"
-                }
-            } else {
-                "not connected"
-            }
-            OneXrConnectionProbe(connected = connected, detail = detail)
-        }.getOrElse { error ->
-            OneXrConnectionProbe(
-                connected = false,
-                detail = "error ${error.javaClass.simpleName}:${error.message ?: "no-message"}"
+            evaluateConnectionProbe(
+                networkCandidateInterfaces = routing.networkCandidates.map { it.interfaceName },
+                addressCandidateInterfaces = routing.addressCandidates.map { it.interfaceName },
+                usbAttached = usbAttached
             )
+        }.getOrElse { error ->
+            if (usbAttached) {
+                OneXrConnectionProbe(connected = true, detail = "connected via USB")
+            } else {
+                OneXrConnectionProbe(
+                    connected = false,
+                    detail = "error ${error.javaClass.simpleName}:${error.message ?: "no-message"}"
+                )
+            }
         }
     }
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     suspend fun runCalibration(): Result<XrConnectionInfo> {
+        // Make sure the glasses' USB Ethernet function is provisioned before
+        // the host is selected, otherwise there is no route to 169.254.x.x.
+        ethernetProvisioner.requestEthernet()
+        ethernetProvisioner.awaitLinkLocalEthernetAddress()
         return runCatching {
             ensureReachableHost()
             client.start()
@@ -179,6 +185,7 @@ class OneXrTrackingSessionManager(
     }
 
     suspend fun stop(): Result<Unit> {
+        ethernetProvisioner.release()
         return runCatching { client.stop() }
     }
 
