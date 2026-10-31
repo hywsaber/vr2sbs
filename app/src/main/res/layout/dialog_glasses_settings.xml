@@ -11,7 +11,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/runCalibrationButton"
-        style="@style/Widget.Vr2xr.Player.DialogActionButton"
+        style="@style/Widget.Vr2sbs.Player.DialogActionButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/run_calibration" />
@@ -37,7 +37,7 @@
             android:orientation="horizontal">
 
             <TextView
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -45,7 +45,7 @@
 
             <TextView
                 android:id="@+id/imuSensitivityValueText"
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/imu_sensitivity_default_value" />
@@ -80,7 +80,7 @@
         android:paddingEnd="@dimen/player_dialog_row_horizontal_padding">
 
         <TextView
-            style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+            style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-22
 
-`vr2xr` collects **0 user data**.
+`vr2sbs` collects **0 user data**.
 
 - No account creation or sign-in
 - No analytics or tracking SDKs

@@ -11,7 +11,7 @@
 #include <smb2/smb2.h>
 #include <smb2/libsmb2.h>
 
-#define LOG_TAG "Vr2xrNativeSmb2"
+#define LOG_TAG "Vr2sbsNativeSmb2"
 
 struct native_smb_file {
     struct smb2_context *context;
@@ -130,7 +130,7 @@ static void close_native_file(struct native_smb_file *handle) {
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeOpen(
+Java_com_vr2sbs_smb_NativeSmbRandomAccessSource_nativeOpen(
         JNIEnv *env,
         jobject instance,
         jstring uri_value,
@@ -224,7 +224,7 @@ cleanup:
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeSize(
+Java_com_vr2sbs_smb_NativeSmbRandomAccessSource_nativeSize(
         JNIEnv *env, jobject instance, jlong pointer) {
     (void) env;
     (void) instance;
@@ -233,7 +233,7 @@ Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeSize(
 }
 
 JNIEXPORT jint JNICALL
-Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeReadAt(
+Java_com_vr2sbs_smb_NativeSmbRandomAccessSource_nativeReadAt(
         JNIEnv *env,
         jobject instance,
         jlong pointer,
@@ -285,7 +285,7 @@ Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeReadAt(
 }
 
 JNIEXPORT void JNICALL
-Java_com_vr2xr_smb_NativeSmbRandomAccessSource_nativeClose(
+Java_com_vr2sbs_smb_NativeSmbRandomAccessSource_nativeClose(
         JNIEnv *env, jobject instance, jlong pointer) {
     (void) env;
     (void) instance;

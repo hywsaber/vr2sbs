@@ -29,7 +29,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/glassesSettingsButton"
-                style="@style/Widget.Vr2xr.Player.IconOnlyButton"
+                style="@style/Widget.Vr2sbs.Player.IconOnlyButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -38,7 +38,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/projectionSettingsButton"
-                style="@style/Widget.Vr2xr.Player.IconOnlyButton"
+                style="@style/Widget.Vr2sbs.Player.IconOnlyButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="@dimen/player_controls_row_spacing"
@@ -48,7 +48,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/fovDecreaseButton"
-                style="@style/Widget.Vr2xr.Player.IconOnlyButton"
+                style="@style/Widget.Vr2sbs.Player.IconOnlyButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="@dimen/player_controls_row_spacing"
@@ -59,7 +59,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/fovIncreaseButton"
-                style="@style/Widget.Vr2xr.Player.IconOnlyButton"
+                style="@style/Widget.Vr2sbs.Player.IconOnlyButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="@dimen/player_controls_row_spacing"
@@ -79,7 +79,7 @@
 
             <TextView
                 android:id="@+id/currentTimeText"
-                style="@style/TextAppearance.Vr2xr.Player.TimeLabel"
+                style="@style/TextAppearance.Vr2sbs.Player.TimeLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -105,7 +105,7 @@
 
             <TextView
                 android:id="@+id/durationTimeText"
-                style="@style/TextAppearance.Vr2xr.Player.TimeLabel"
+                style="@style/TextAppearance.Vr2sbs.Player.TimeLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -129,7 +129,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/seekBackButton"
-                    style="@style/Widget.Vr2xr.Player.TransportIconButton"
+                    style="@style/Widget.Vr2sbs.Player.TransportIconButton"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginEnd="@dimen/player_controls_transport_spacing"
@@ -139,7 +139,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/playPauseButton"
-                    style="@style/Widget.Vr2xr.Player.PlayPauseButton"
+                    style="@style/Widget.Vr2sbs.Player.PlayPauseButton"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1.45"
@@ -149,7 +149,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/seekForwardButton"
-                    style="@style/Widget.Vr2xr.Player.TransportIconButton"
+                    style="@style/Widget.Vr2sbs.Player.TransportIconButton"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="@dimen/player_controls_transport_spacing"

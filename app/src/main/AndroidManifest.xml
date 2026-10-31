@@ -17,10 +17,10 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:name=".app.Vr2xrApplication"
+        android:name=".app.Vr2sbsApplication"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Vr2xr"
+        android:theme="@style/Theme.Vr2sbs"
         android:usesCleartextTraffic="true">
 
         <activity
@@ -50,6 +50,11 @@
 
         <activity
             android:name=".app.SmbBrowserActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait" />
+
+        <activity
+            android:name=".app.SmbScanActivity"
             android:exported="false"
             android:screenOrientation="sensorPortrait" />
 

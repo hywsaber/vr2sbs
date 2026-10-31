@@ -21,7 +21,7 @@
             android:checked="true"
             android:paddingTop="@dimen/player_timeline_time_spacing"
             android:paddingBottom="@dimen/player_timeline_time_spacing"
-            android:textAppearance="@style/TextAppearance.Vr2xr.Player.DialogItem"
+            android:textAppearance="@style/TextAppearance.Vr2sbs.Player.DialogItem"
             android:textColor="@color/player_controls_text_primary"
             android:text="@string/projection_half_equirectangular_vr180"
             app:buttonTint="@color/player_controls_timeline_active" />
@@ -33,7 +33,7 @@
             android:paddingTop="@dimen/player_timeline_time_spacing"
             android:paddingBottom="@dimen/player_timeline_time_spacing"
             android:text="@string/projection_fisheye_equidistant_vr180"
-            android:textAppearance="@style/TextAppearance.Vr2xr.Player.DialogItem"
+            android:textAppearance="@style/TextAppearance.Vr2sbs.Player.DialogItem"
             android:textColor="@color/player_controls_text_primary"
             app:buttonTint="@color/player_controls_timeline_active" />
 
@@ -44,7 +44,7 @@
             android:paddingTop="@dimen/player_timeline_time_spacing"
             android:paddingBottom="@dimen/player_timeline_time_spacing"
             android:text="@string/projection_fisheye_equisolid_vr180"
-            android:textAppearance="@style/TextAppearance.Vr2xr.Player.DialogItem"
+            android:textAppearance="@style/TextAppearance.Vr2sbs.Player.DialogItem"
             android:textColor="@color/player_controls_text_primary"
             app:buttonTint="@color/player_controls_timeline_active" />
     </RadioGroup>
@@ -64,7 +64,7 @@
         android:paddingBottom="@dimen/player_dialog_row_horizontal_padding">
 
         <TextView
-            style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+            style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/projection_sbs_output_title" />
@@ -79,7 +79,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/projectionSbsHalfOption"
-                style="@style/Widget.Vr2xr.Player.DialogOutlinedButton"
+                style="@style/Widget.Vr2sbs.Player.DialogOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -87,7 +87,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/projectionSbsFullOption"
-                style="@style/Widget.Vr2xr.Player.DialogOutlinedButton"
+                style="@style/Widget.Vr2sbs.Player.DialogOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -116,7 +116,7 @@
             android:orientation="horizontal">
 
             <TextView
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -124,7 +124,7 @@
 
             <TextView
                 android:id="@+id/projectionFovValueText"
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/projection_fov_default_value" />
@@ -169,7 +169,7 @@
             android:orientation="horizontal">
 
             <TextView
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -177,7 +177,7 @@
 
             <TextView
                 android:id="@+id/projectionLensFovValueText"
-                style="@style/TextAppearance.Vr2xr.Player.DialogItem"
+                style="@style/TextAppearance.Vr2sbs.Player.DialogItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/projection_lens_fov_default_value" />
@@ -202,7 +202,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/projectionResetFovButton"
-        style="@style/Widget.Vr2xr.Player.DialogOutlinedButton"
+        style="@style/Widget.Vr2sbs.Player.DialogOutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/player_dialog_row_spacing"

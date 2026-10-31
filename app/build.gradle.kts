@@ -5,8 +5,8 @@ plugins {
     id("com.github.triplet.play")
 }
 
-val defaultVersionName = "0.2.1"
-val defaultVersionCode = 1
+val defaultVersionName = "0.2.2"
+val defaultVersionCode = 2
 
 val releaseVersionName = System.getenv("VR2XR_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
 val releaseVersionCodeRaw = System.getenv("VR2XR_VERSION_CODE")?.trim()?.takeIf { it.isNotEmpty() }
@@ -53,7 +53,7 @@ if (releaseTasksRequested) {
 }
 
 android {
-    namespace = "com.vr2xr"
+    namespace = "com.vr2sbs"
     compileSdk = 35
     ndkVersion = "29.0.14206865"
 

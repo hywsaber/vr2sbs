@@ -18,6 +18,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "vr2xr"
+rootProject.name = "vr2sbs"
 include(":app", ":onexr")
 project(":onexr").projectDir = file("reference/one-xr/onexr")

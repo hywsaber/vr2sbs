@@ -1,10 +1,51 @@
 <p align="center">
-  <img src="assets/banner.png" alt="vr2xr" width="100%">
+  <img src="assets/banner.png" alt="vr2sbs" width="100%">
 </p>
 
 <p align="center">
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
+
+## vr2sbs v0.2.2 release notes
+
+This version adds LAN discovery for SMB shares, so opening a network folder works like Windows 11's **Network** view: scan for devices, pick one, sign in, and browse its shares without typing a share name. Existing SMB playback, projection, and tracking behavior is unchanged.
+
+### New features
+
+#### Scan SMB: discover servers on the local network
+
+- A new **Scan SMB** button is available directly below **Open SMB share**.
+- The scan starts automatically and lists SMB servers on the current Wi-Fi/Ethernet network as they are found. **Rescan** repeats the search.
+- Servers are detected by probing TCP port 445 with bounded concurrency and a 450 ms timeout. Typical /24 networks are scanned in full (254 addresses); larger networks are limited to the local /24, while /23 or smaller subnets are scanned exactly. A scan targets at most 1,024 addresses.
+- NetBIOS node-status queries resolve friendly names such as `MEDIA-PC`; the IP address is shown when a name is unavailable.
+- The scan uses only the existing network permissions; no new runtime permission is required.
+
+#### Device sign-in without a share name
+
+- Tapping a discovered device opens the same credentials dialog used by **Open SMB share**: username, optional domain, password, and **Remember this account securely**.
+- After a successful sign-in, the browser opens the device's share list directly, so no share name has to be entered.
+- Administrative shares (`C$`, `ADMIN$`, `IPC$`, and similar) are hidden at the device root, matching the Windows **Network** view.
+- Remembered devices appear at the top of the scan screen as purple buttons. Tap one to reconnect; long-press to forget all saved credentials for that device.
+- Saved share-level accounts from older versions are grouped into one device entry per host, so they can be reused from the scan screen without signing in again.
+
+### Fixes and improvements
+
+- The **Share name** field in the manual **Open SMB share** form may now be left blank to list all shares on a server.
+- Scan result and completion text handle singular and plural counts correctly.
+- Added unit tests for subnet target selection, NetBIOS query/response encoding and parsing, and remembered-device grouping.
+
+### Installation and compatibility
+
+- versionName `0.2.2`, versionCode `2`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.2.1 (same signing identity); saved SMB profiles are kept.
+- Can be installed alongside the original vr2xr-neo app.
+
+### Known issue
+
+- On some sources the right half of the picture still looks lower-resolution on the glasses. This is under investigation; this version does not change the display/external output path.
+
+---
 
 ## vr2sbs v0.2.1 release notes
 
@@ -58,7 +99,7 @@ The app selects a display mode with the same resolution as the chosen output for
 
 - Some sources still appear to have lower resolution in the right half on the glasses. This is under investigation; this version does not change the related display/external output path.
 
-**vr2xr Neo is an Android VR SBS video player for XREAL One and XREAL One Pro glasses.** It supports local files, HTTP(S) URLs, Android share intents, and SMB2/SMB3 network shares, with phone controls and IMU head tracking.
+**vr2sbs is an Android VR SBS video player for XREAL One and XREAL One Pro glasses.** It supports local files, HTTP(S) URLs, Android share intents, and SMB2/SMB3 network shares, with phone controls and IMU head tracking.
 
 This repository is a maintained fork of [Skarian/vr2xr](https://github.com/skarian/vr2xr). The original project and author are credited below; the fork-specific improvements are highlighted in [What this fork adds](#what-this-fork-adds).
 
@@ -67,6 +108,7 @@ This repository is a maintained fork of [Skarian/vr2xr](https://github.com/skari
 > **This fork goes well beyond maintenance:** it adds high-performance network playback, two new VR180 projection models, faster FOV controls, and a more streamlined tracking workflow while preserving the original vr2xr playback experience.
 
 - **Native SMB2/SMB3 playback** — Browse network shares with thumbnails and sorting, then stream and seek through large videos using native `libsmb2`, with `jcifs-ng` as a compatibility fallback.
+- **LAN SMB discovery** — Scan the local network for SMB servers, sign in once, and open a device's shares without typing a share name; remembered devices appear as quick-connect buttons.
 - **Broader VR180 format support** — Play half-equirectangular, equidistant-fisheye, and equisolid-fisheye content, with independent view and lens FOV tuning.
 - **Faster view control** — Drag directly to adjust the view, pinch with two fingers to change FOV, use dedicated 5° FOV buttons, and double-tap to recenter.
 - **Smoother setup flow** — Enter calibration only when tracking requires it, launch calibration automatically after connection, and optionally hide the recurring Full SBS reminder.
@@ -79,7 +121,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 | Area | Changes in this fork |
 | --- | --- |
 | Video sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files continue to use Android's system document picker. |
-| SMB browsing | Added server/share/domain/account login, folder navigation, supported-video filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. |
+| SMB browsing | Added server/share/domain/account login, folder navigation, supported-video filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. |
 | SMB playback | Added a Media3 SMB data source with buffered random access for playback and seeking. Native `libsmb2` is preferred for throughput; `jcifs-ng` is retained as a fallback. |
 | Credential privacy | Saved SMB passwords are encrypted with AES-GCM using a non-exportable Android Keystore key. Server metadata stays in the app's private storage. |
 | Projection modes | Added VR180 fisheye equidistant and fisheye equisolid rendering in addition to the original half-equirectangular mode. |
@@ -93,13 +135,13 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 ---
 
 <p align="center">
-  <img src="./assets/screenshots/framed/01-home-framed.png" alt="vr2xr home" width="22%">
+  <img src="./assets/screenshots/framed/01-home-framed.png" alt="vr2sbs home" width="22%">
   &nbsp;
-  <img src="./assets/screenshots/framed/02-calibration-framed.png" alt="vr2xr calibration setup" width="22%">
+  <img src="./assets/screenshots/framed/02-calibration-framed.png" alt="vr2sbs calibration setup" width="22%">
   &nbsp;
-  <img src="./assets/screenshots/framed/03-sbs-mode-framed.png" alt="vr2xr SBS mode setup" width="22%">
+  <img src="./assets/screenshots/framed/03-sbs-mode-framed.png" alt="vr2sbs SBS mode setup" width="22%">
   &nbsp;
-  <img src="./assets/screenshots/framed/04-player-framed.png" alt="vr2xr player controls" width="22%">
+  <img src="./assets/screenshots/framed/04-player-framed.png" alt="vr2sbs player controls" width="22%">
 </p>
 
 ## Features
@@ -107,6 +149,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 - **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle that can skip calibration when disabled
 - **Multiple video sources**: Local files, `http(s)` URLs, Android share intents, and built-in SMB2/SMB3 network shares
 - **SMB media browser**: Browse folders, show video thumbnails, sort by modification date, and remember multiple server profiles
+- **SMB device discovery**: Scan the local Wi-Fi/Ethernet network for SMB servers, resolve NetBIOS names, and open a device's shares without entering a share name
 - **High-throughput SMB playback**: Native `libsmb2` random-access reading and seeking, with a `jcifs-ng` compatibility fallback
 - **Multiple VR180 projections**: VR180 to SBS (half equirectangular), fisheye equidistant, and fisheye equisolid projection
 - **SBS output options**: Switch between Half-SBS (1920×1080) and Full-SBS (3840×1080) output while playing
@@ -130,8 +173,9 @@ Phone-only playback is intentionally unsupported. The app does not switch the gl
 2. Select a source:
    - tap **Open file** for Android's system file picker;
    - enter an `http(s)` URL and tap **Open URL**;
-   - tap **Open SMB share** for a network share; or
-   - share a video link/file to vr2xr from another Android app.
+   - tap **Open SMB share** for a network share;
+   - tap **Scan SMB** to discover SMB devices on the local network and sign in to one; or
+   - share a video link/file to vr2sbs from another Android app.
 3. If calibration is required, place the glasses on a flat surface and tap **Run Calibration**. If head tracking is not needed, tap **Disable IMU Tracking** to skip calibration.
 4. Put the glasses back on and set `Display > 3D Mode` to match the app's **SBS Output** setting (`Full SBS` or `Half SBS`). The reminder can be hidden for future launches.
 5. Tap **Continue to VR Player**. The app applies Zero View automatically.
@@ -150,19 +194,21 @@ If the glasses are disconnected during playback, the video pauses and waits for 
 - **Playback row**: Seek backward/forward 15 seconds, play/pause, or scrub the timeline
 
 <p align="center">
-  <img src="assets/readme-gifs/vr2xr-player-2.gif" alt="Use vr2xr player controls" width="48%">
+  <img src="assets/readme-gifs/vr2sbs-player-2.gif" alt="Use vr2sbs player controls" width="48%">
   &nbsp;
-  <img src="assets/readme-gifs/vr2xr-player-3.gif" alt="Adjust vr2xr projection settings" width="48%">
+  <img src="assets/readme-gifs/vr2sbs-player-3.gif" alt="Adjust vr2sbs projection settings" width="48%">
 </p>
 
 ## SMB shares
 
-Enter the server host/IP address and share name. Domain, username, and password are available for authenticated shares. Enable **Remember this account securely** to save the profile on the device; long-press a saved profile to remove it.
+For a share you already know, tap **Open SMB share** and enter the server host/IP and, optionally, a share name; domain, username, and password are available for authenticated shares. Leaving the share name blank lists all shares on the server.
+
+To discover servers instead, tap **Scan SMB**: the app scans the current Wi-Fi/Ethernet network and lists SMB devices as they respond, showing NetBIOS names when available. Tap a device, enter the username and password (plus an optional domain), and the app opens the device's share list directly — no share name needed. Enable **Remember this account securely** to save the device; remembered devices appear at the top of the scan screen and can be removed with a long-press.
 
 The browser shows folders and supported videos, generates thumbnails when possible, and can sort entries newest-first or oldest-first. Video data is read directly from the SMB server and is not copied to the developer or an intermediary service.
 
 <p align="center">
-  <img src="assets/readme-gifs/vr2xr-player-1.gif" alt="Browse and open videos from an SMB share" width="36%">
+  <img src="assets/readme-gifs/vr2sbs-player-1.gif" alt="Browse and open videos from an SMB share" width="36%">
 </p>
 
 ## Build and test

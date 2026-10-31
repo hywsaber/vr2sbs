@@ -8,7 +8,7 @@
     android:padding="@dimen/launcher_screen_padding">
 
     <TextView
-        style="@style/TextAppearance.Vr2xr.Launcher.Status"
+        style="@style/TextAppearance.Vr2sbs.Launcher.Status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/smb_browser_title" />
@@ -32,7 +32,7 @@
                 android:orientation="vertical" />
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Vr2xr.Launcher.Input"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/launcher_section_spacing"
@@ -46,7 +46,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Vr2xr.Launcher.Input"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -60,7 +60,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Vr2xr.Launcher.Input"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -74,7 +74,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Vr2xr.Launcher.Input"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -88,7 +88,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Vr2xr.Launcher.Input"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -113,7 +113,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/smbConnectButton"
-                style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -123,14 +123,14 @@
 
     <TextView
         android:id="@+id/smbStatusText"
-        style="@style/TextAppearance.Vr2xr.Launcher.RuntimeStatus"
+        style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp" />
 
     <TextView
         android:id="@+id/smbCurrentFolderText"
-        style="@style/TextAppearance.Vr2xr.Launcher.Status"
+        style="@style/TextAppearance.Vr2sbs.Launcher.Status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -145,14 +145,14 @@
         android:visibility="gone">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/smbBackButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/smb_back" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/smbSortButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

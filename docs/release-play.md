@@ -35,21 +35,23 @@ keytool -export -rfc \
 
 Register the upload certificate in Play App Signing if Play prompts for it.
 
+The `vr2xr-upload` keystore name and alias, and the `VR2XR_*` variable/secret names, are legacy identifiers retained to match the existing signing key and configured GitHub secrets. Renaming them would require re-entering the original signing credentials.
+
 ### 3) Configure Google Cloud Workload Identity Federation
 
 ```bash
 export GCP_PROJECT_ID="<your-project-id>"
 export GCP_PROJECT_NUMBER="<your-project-number>"
-export GITHUB_ORG="Skarian"
-export GITHUB_REPO="Skarian/vr2xr"
+export GITHUB_ORG="hywsaber"
+export GITHUB_REPO="hywsaber/vr2sbs"
 export WIF_POOL_ID="github"
-export WIF_PROVIDER_ID="vr2xr"
-export SA_NAME="vr2xr-play-publisher"
+export WIF_PROVIDER_ID="vr2sbs"
+export SA_NAME="vr2sbs-play-publisher"
 export SA_EMAIL="${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
 gcloud iam service-accounts create "${SA_NAME}" \
   --project="${GCP_PROJECT_ID}" \
-  --display-name="vr2xr Play Publisher"
+  --display-name="vr2sbs Play Publisher"
 
 gcloud iam workload-identity-pools create "${WIF_POOL_ID}" \
   --project="${GCP_PROJECT_ID}" \
@@ -60,7 +62,7 @@ gcloud iam workload-identity-pools providers create-oidc "${WIF_PROVIDER_ID}" \
   --project="${GCP_PROJECT_ID}" \
   --location="global" \
   --workload-identity-pool="${WIF_POOL_ID}" \
-  --display-name="vr2xr GitHub Provider" \
+  --display-name="vr2sbs GitHub Provider" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="assertion.repository_owner == '${GITHUB_ORG}'"

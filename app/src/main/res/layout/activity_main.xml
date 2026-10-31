@@ -41,7 +41,7 @@
 
             <TextView
                 android:id="@+id/xrealStatusText"
-                style="@style/TextAppearance.Vr2xr.Launcher.Status"
+                style="@style/TextAppearance.Vr2sbs.Launcher.Status"
                 android:layout_width="@dimen/launcher_status_label_width"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
@@ -53,7 +53,7 @@
 
         <TextView
             android:id="@+id/statusText"
-            style="@style/TextAppearance.Vr2xr.Launcher.RuntimeStatus"
+            style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/launcher_runtime_status_top_margin"
@@ -63,7 +63,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/urlInputLayout"
-            style="@style/Widget.Vr2xr.Launcher.Input"
+            style="@style/Widget.Vr2sbs.Launcher.Input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/launcher_section_spacing"
@@ -84,7 +84,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/openUrlButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/launcher_section_spacing"
@@ -92,7 +92,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/openFileButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/launcher_section_spacing"
@@ -100,15 +100,23 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/openSmbShareButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/launcher_section_spacing"
             android:text="@string/open_smb_share" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/scanSmbButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/scan_smb" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/requirementsHelpButton"
-            style="@style/Widget.Vr2xr.Launcher.HelpButton"
+            style="@style/Widget.Vr2sbs.Launcher.HelpButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -118,7 +126,7 @@
     </LinearLayout>
 
     <TextView
-        style="@style/TextAppearance.Vr2xr.Launcher.Footer"
+        style="@style/TextAppearance.Vr2sbs.Launcher.Footer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/launcher_footer_top_margin"

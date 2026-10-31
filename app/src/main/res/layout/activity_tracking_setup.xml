@@ -23,7 +23,7 @@
 
         <TextView
             android:id="@+id/instructionText"
-            style="@style/TextAppearance.Vr2xr.Setup.Instruction"
+            style="@style/TextAppearance.Vr2sbs.Setup.Instruction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
@@ -40,7 +40,7 @@
 
         <TextView
             android:id="@+id/statusText"
-            style="@style/TextAppearance.Vr2xr.Setup.Status"
+            style="@style/TextAppearance.Vr2sbs.Setup.Status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/setup_status_top_margin"
@@ -54,7 +54,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/runCalibrationButton"
-                style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/run_calibration" />
@@ -87,7 +87,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/disableImuTrackingButton"
-            style="@style/Widget.Vr2xr.Launcher.PrimaryButton"
+            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/setup_secondary_button_top_margin"
@@ -101,7 +101,7 @@
 
     <TextView
         android:id="@+id/footerText"
-        style="@style/TextAppearance.Vr2xr.Launcher.Footer"
+        style="@style/TextAppearance.Vr2sbs.Launcher.Footer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/launcher_footer_top_margin"

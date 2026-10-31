@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(vr2xr_smb LANGUAGES C)
+project(vr2sbs_smb LANGUAGES C)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)

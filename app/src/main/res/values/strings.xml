@@ -3,6 +3,7 @@
     <string name="hint_url">https://example.com/video.mp4</string>
     <string name="open_file">Open file</string>
     <string name="open_smb_share">Open SMB share</string>
+    <string name="scan_smb">Scan SMB</string>
     <string name="open_url">Open URL</string>
     <string name="requirements_help">App Requirements</string>
     <string name="requirements_help_content_description">Show requirements</string>
@@ -82,7 +83,7 @@
     <string name="smb_password">Password</string>
     <string name="smb_remember_account">Remember this account securely</string>
     <string name="smb_connect">Connect</string>
-    <string name="smb_connecting">Connecting and checking the share…</string>
+    <string name="smb_connecting">Connecting to SMB server…</string>
     <string name="smb_loading">Loading folder…</string>
     <string name="smb_back">Back</string>
     <string name="smb_sort_newest_first">Newest first</string>
@@ -91,12 +92,35 @@
     <string name="smb_entries_count">%1$d folders and playable videos</string>
     <string name="smb_empty_folder">No folders or supported videos found here.</string>
     <string name="smb_saved_profile">Connect to %1$s</string>
-    <string name="smb_error_invalid_profile">Enter a valid server and share name</string>
-    <string name="smb_error_connect_failed">Unable to connect to SMB share: %1$s</string>
+    <string name="smb_error_invalid_profile">Enter a valid server address</string>
+    <string name="smb_error_connect_failed">Unable to connect to SMB server: %1$s</string>
     <string name="smb_error_list_failed">Unable to read SMB folder: %1$s</string>
+    <string name="smb_no_shares">No shared folders found on this device.</string>
     <string name="smb_forget_title">Forget SMB account?</string>
     <string name="smb_forget_message">Remove the saved credentials for %1$s from this device?</string>
     <string name="smb_forget">Forget</string>
+    <string name="smb_scan_title">SMB devices</string>
+    <string name="smb_scan_remembered_heading">Remembered devices</string>
+    <string name="smb_scan_devices_heading">Devices on your network</string>
+    <string name="smb_scan_rescan">Rescan</string>
+    <string name="smb_scan_scanning_button">Scanning…</string>
+    <string name="smb_scan_status_scanning">Scanning local network for SMB devices…</string>
+    <plurals name="smb_scan_status_found">
+        <item quantity="one">Scanning… %1$d device found</item>
+        <item quantity="other">Scanning… %1$d devices found</item>
+    </plurals>
+    <plurals name="smb_scan_status_complete">
+        <item quantity="one">%1$d SMB device found</item>
+        <item quantity="other">%1$d SMB devices found</item>
+    </plurals>
+    <string name="smb_scan_status_empty">No SMB devices found. Make sure file sharing is enabled on the other device and that both devices are on the same network.</string>
+    <string name="smb_scan_status_network_unavailable">Connect to Wi-Fi or Ethernet to scan for SMB devices.</string>
+    <string name="smb_scan_status_failed">Unable to scan the local network: %1$s</string>
+    <string name="smb_scan_device_smb_server">SMB server</string>
+    <string name="smb_scan_connect_title">Connect to %1$s</string>
+    <string name="smb_scan_dialog_server">Server: %1$s</string>
+    <string name="smb_scan_forget_device_title">Forget SMB device?</string>
+    <string name="smb_scan_forget_device_message">Remove all saved credentials for %1$s from this device?</string>
     <string name="error_invalid_url">Invalid URL</string>
     <string name="error_unsupported_launch_intent">Unsupported launch intent</string>
     <string name="error_unknown">unknown error</string>

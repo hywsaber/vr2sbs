@@ -31,7 +31,7 @@
 
         <TextView
             android:id="@+id/smbEntryName"
-            style="@style/TextAppearance.Vr2xr.Launcher.RuntimeStatus"
+            style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
