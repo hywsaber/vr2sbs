@@ -7,6 +7,9 @@
     <string name="open_url">Open URL</string>
     <string name="requirements_help">App Requirements</string>
     <string name="requirements_help_content_description">Show requirements</string>
+    <string name="new_releases">New Releases</string>
+    <string name="new_releases_content_description">Open the GitHub releases page</string>
+    <string name="error_open_releases">Unable to open the releases page</string>
     <string name="recenter">Recenter</string>
     <string name="recenter_content_description">Recenter view</string>
     <string name="run_calibration">Run Calibration</string>

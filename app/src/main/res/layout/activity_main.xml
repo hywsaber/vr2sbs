@@ -123,6 +123,15 @@
             android:layout_marginTop="@dimen/launcher_section_spacing"
             android:contentDescription="@string/requirements_help_content_description"
             android:text="@string/requirements_help" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/newReleasesButton"
+            style="@style/Widget.Vr2sbs.Launcher.HelpButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/new_releases_content_description"
+            android:text="@string/new_releases" />
     </LinearLayout>
 
     <TextView

@@ -228,7 +228,7 @@ private fun ProjectionMode.toShaderValue(): Int {
 private const val VERTEX_SHADER = """
 attribute vec2 aPosition;
 attribute vec2 aTexCoord;
-varying vec2 vRawCoord;
+varying highp vec2 vRawCoord;
 
 void main() {
     gl_Position = vec4(aPosition, 0.0, 1.0);
@@ -238,8 +238,12 @@ void main() {
 
 private const val FRAGMENT_SHADER = """
 #extension GL_OES_EGL_image_external : require
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
 precision mediump float;
-varying vec2 vRawCoord;
+#endif
+varying highp vec2 vRawCoord;
 uniform float uTexScaleX;
 uniform float uTexOffsetX;
 uniform int uProjectionMode;

@@ -6,6 +6,35 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.2.3 release notes — major image-quality fix
+
+**This is the most significant image-quality update in vr2sbs so far.** It fixes a long-standing defect where the glasses showed the right eye at roughly half the horizontal resolution of the left eye, while vertical resolution looked normal.
+
+### Core fix: equal horizontal clarity in both eyes
+
+- **Root cause.** The SBS fragment shader declared `precision mediump float`. On GPUs that implement `mediump` as fp16, texture coordinates in `[0.5, 1]` have half the precision of coordinates in `[0.25, 0.5)`. The right eye samples the right half of the source texture through a `+0.5` UV offset, so its horizontal sampling grid was about twice as coarse as the left eye's. Vertical UVs were identical for both eyes, which is why only horizontal resolution was affected.
+- **Fix.** The shader now uses `highp` floats for texture coordinates when the GPU supports them (`GL_FRAGMENT_PRECISION_HIGH`), falling back to `mediump` otherwise. Both eyes now sample the source at the same precision.
+- **Scope.** All projection modes, both Half-SBS and Full-SBS output, and all sources. Playback, SMB, tracking, and projection behavior are otherwise unchanged.
+
+### Other changes since v0.2.2
+
+- The launcher now has a **New Releases** button directly below **App Requirements**; it opens the GitHub Releases page.
+- versionName is now `0.2.3` (versionCode `3`).
+
+### Installation and compatibility
+
+- versionName `0.2.3`, versionCode `3`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.2.2 (same signing identity); saved SMB profiles and projection settings are kept.
+- Can be installed alongside the original vr2xr-neo app.
+
+### Notes
+
+- The right-half lower-resolution issue listed under v0.2.2 is fixed in this release.
+- The GitHub side-load APK is still signed with the Android Debug certificate used by v0.2.1 and v0.2.2; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.2.2 release notes
 
 This version adds LAN discovery for SMB shares, so opening a network folder works like Windows 11's **Network** view: scan for devices, pick one, sign in, and browse its shares without typing a share name. Existing SMB playback, projection, and tracking behavior is unchanged.
@@ -43,7 +72,7 @@ This version adds LAN discovery for SMB shares, so opening a network folder work
 
 ### Known issue
 
-- On some sources the right half of the picture still looks lower-resolution on the glasses. This is under investigation; this version does not change the display/external output path.
+- On some sources the right half of the picture still looks lower-resolution on the glasses. This is under investigation; this version does not change the display/external output path. **Fixed in v0.2.3.**
 
 ---
 
@@ -107,6 +136,7 @@ This repository is a maintained fork of [Skarian/vr2xr](https://github.com/skari
 
 > **This fork goes well beyond maintenance:** it adds high-performance network playback, two new VR180 projection models, faster FOV controls, and a more streamlined tracking workflow while preserving the original vr2xr playback experience.
 
+- **Equal-resolution stereo rendering** — v0.2.3 fixes a fragment-shader precision bug that made the right eye sample at half the horizontal resolution of the left.
 - **Native SMB2/SMB3 playback** — Browse network shares with thumbnails and sorting, then stream and seek through large videos using native `libsmb2`, with `jcifs-ng` as a compatibility fallback.
 - **LAN SMB discovery** — Scan the local network for SMB servers, sign in once, and open a device's shares without typing a share name; remembered devices appear as quick-connect buttons.
 - **Broader VR180 format support** — Play half-equirectangular, equidistant-fisheye, and equisolid-fisheye content, with independent view and lens FOV tuning.

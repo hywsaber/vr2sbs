@@ -2,6 +2,7 @@ package com.vr2sbs.app
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
@@ -78,6 +79,9 @@ class MainActivity : AppCompatActivity() {
         }
         binding.requirementsHelpButton.setOnClickListener {
             showRequirementsModal()
+        }
+        binding.newReleasesButton.setOnClickListener {
+            openReleasesPage()
         }
 
         renderConnectionStatusUi(ConnectionStatusUi.CHECKING)
@@ -244,6 +248,14 @@ class MainActivity : AppCompatActivity() {
             .setTextColor(ContextCompat.getColor(this, R.color.catppuccin_mocha_blue))
     }
 
+    private fun openReleasesPage() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)))
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.error_open_releases, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun renderConnectionStatusUi(nextStatus: ConnectionStatusUi) {
         val animateConnectedTransition =
             currentConnectionStatus == ConnectionStatusUi.NOT_CONNECTED &&
@@ -298,4 +310,7 @@ class MainActivity : AppCompatActivity() {
         renderConnectionStatusUi(nextStatus)
     }
 
+    private companion object {
+        const val RELEASES_URL = "https://github.com/hywsaber/vr2sbs/releases/"
+    }
 }
