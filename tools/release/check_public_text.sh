@@ -97,10 +97,11 @@ patterns=(
   '(^|[^0-9.])(10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3})([^0-9.]|$)'
   '(^|[^0-9A-Fa-f])([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}([^0-9A-Fa-f]|$)'
   '(adb[[:space:]]+(connect|tcpip))|:55{2}5'
-  '\b(TB-[0-9]{4}[A-Za-z]?|NX[0-9]{3,4}[A-Za-z]?)\b'
+  '\b(TB-[0-9]{4}[A-Za-z]?|NX[0-9]{3,4}[A-Za-z]?|SM[-_][A-Z0-9]{3,}|R[0-9][A-Z0-9]{9,10})\b'
   '(^|[^A-Za-z0-9_-])[A-Za-z0-9][A-Za-z0-9_-]{2,}(_(5G|2\.4G|2G|WiFi|wifi|WLAN|wlan))([^A-Za-z0-9_-]|$)'
   '([Cc]:[/\\]+Users[/\\]|/Users/[^/[:space:]]+/|/home/[^/[:space:]]+/)'
   '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+  '(^|[^A-Za-z0-9])(Galaxy|Redmi|OnePlus|Xiaomi|Huawei|Honor|OPPO|vivo|Lenovo|Nubia)[[:space:]]+[A-Z0-9][A-Za-z0-9+]*'
 )
 
 labels=(
@@ -111,6 +112,7 @@ labels=(
   "SSID-like network name"
   "local user path"
   "email address"
+  "device brand and model"
 )
 
 found=0
