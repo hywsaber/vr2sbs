@@ -59,8 +59,14 @@
             android:screenOrientation="sensorPortrait" />
 
         <activity
+            android:name=".app.BilibiliLoginActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait" />
+
+        <activity
             android:name=".app.MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="sensorPortrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

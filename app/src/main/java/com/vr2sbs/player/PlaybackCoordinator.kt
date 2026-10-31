@@ -94,7 +94,7 @@ class PlaybackCoordinator {
     }
 
     fun attachSource(source: SourceDescriptor, forceReset: Boolean) {
-        val sourceChanged = activeSource?.normalized != source.normalized
+        val sourceChanged = activeSource?.playbackKey != source.playbackKey
         if (!sourceChanged && !forceReset) {
             publishState()
             return

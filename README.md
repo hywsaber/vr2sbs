@@ -6,6 +6,41 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+## vr2sbs v0.3.0 release notes — Bilibili share playback
+
+**This is the biggest addition to vr2sbs's list of sources so far: you can now play videos straight from Bilibili share text.** Paste everything you copied from the Bilibili app — title, description, and link — and vr2sbs strips the surrounding text, resolves the video, and plays it at the highest quality your Bilibili account and phone can support. From there nothing changes: the same player, projection controls, and XREAL glasses output that every other source uses.
+
+### New: Open bilibili share
+
+- A new **Open bilibili share** button sits directly above the URL field on the home screen. Paste the complete text from Bilibili's share sheet — for example `[VR180 5.7K] VR视角带逛北大教学楼（关掉B站全景模式可正常播放） https://www.bilibili.com/video/BV1Fd4y1N78r/` — and tap **Open**.
+- Titles, descriptions, emoji, and other text around the link are discarded. The video is extracted from full `bilibili.com/video/` links, `b23.tv` short links (followed to the real address automatically), or a bare `BV`/`av` id.
+- Bilibili links can also be shared to vr2sbs directly from the Bilibili app or a browser through Android's share sheet, without copying and pasting first. Sharing another link while vr2sbs is already open now updates the same dialog instead of doing nothing.
+- The input is pre-filled from the clipboard when it already contains a Bilibili link.
+
+### New: in-app Bilibili sign-in for the highest quality
+
+- Tap **Sign in to Bilibili** to open Bilibili's own sign-in page inside the app. It uses Bilibili's mobile layout, so phone-number + SMS code, account + password, or QR code all work on the phone itself — no second device is needed to scan anything.
+- The session is kept on the device, so you only sign in once. Use **Switch Bilibili account** in the dialog to sign in as someone else, or clear the app's data to remove the session.
+- Signing in is optional but determines quality: without an account, Bilibili normally limits playback to 480P (lower for some videos); member and VIP accounts unlock their entitled qualities.
+- When you tap **Open**, vr2sbs asks Bilibili for the highest quality the account is entitled to, then picks the best stream the phone's video and audio decoders can actually play. For example, 8K or AV1 streams are skipped when the device reports no decoder for them.
+- Bilibili delivers video and audio as separate DASH streams. vr2sbs requests both and merges them, so play/pause, 15-second seeks, timeline scrubbing, projection controls, and output to the XREAL glasses work exactly as they do for local or SMB videos.
+- If Bilibili restricts a video to a higher membership tier, a different region, or payment, the app shows Bilibili's own error instead of starting playback.
+
+### Privacy
+
+- The sign-in session is stored in the app's private WebView cookie store and is sent only to Bilibili when fetching video information and streams. Your password is entered on Bilibili's page and is never stored by vr2sbs.
+- Bilibili's web endpoints are not officially documented and may change without notice.
+
+### Installation and compatibility
+
+- versionName `0.3.0`, versionCode `6`, minSdk 33, targetSdk 35.
+- Supports XREAL One / XREAL One Pro.
+- Upgrades in place over v0.2.5 (same signing identity); saved SMB accounts, folder bookmarks, the SMB cache, sort order, and projection settings are kept.
+- Can be installed alongside the original vr2xr-neo app.
+- The GitHub side-load APK is still signed with the Android Debug certificate; distributing through Google Play still requires a proper upload key and CI configuration.
+
+---
+
 ## vr2sbs v0.2.5 release notes — SMB folder bookmarks and VR180 photos
 
 This update adds bookmarks for SMB folders and support for VR180 photos. On any folder page the former **Back** control is now **Bookmark**, and saved folders appear at the top of the **Open SMB share** page for one-tap access. Photo files now appear in SMB folders and can be opened in the player, where the forward and back controls step through the folder's photos.
@@ -218,8 +253,9 @@ This repository is forked from [NeoNatural/vr2xr-neo](https://github.com/NeoNatu
 
 ## What this fork adds
 
-> **This fork goes well beyond maintenance:** it adds high-performance network playback, two new VR180 projection models, faster FOV controls, and a more streamlined tracking workflow while preserving the original vr2xr playback experience.
+> **This fork goes well beyond maintenance:** it adds Bilibili share-text playback with in-app sign-in, high-performance network playback, two new VR180 projection models, faster FOV controls, and a more streamlined tracking workflow while preserving the original vr2xr playback experience.
 
+- **Bilibili share playback** — Paste the full share text from the Bilibili app and vr2sbs extracts the video from the surrounding title and description, then plays it at the highest quality the signed-in account and phone can handle. An optional in-app sign-in opens Bilibili's own mobile page, so SMS or password login works on the phone itself; the Bilibili DASH video and audio streams are merged and played through the same player and glasses output as any other source.
 - **Equal-resolution stereo rendering** — v0.2.3 fixes a fragment-shader precision bug that made the right eye sample at half the horizontal resolution of the left.
 - **Native SMB2/SMB3 playback** — Browse network shares with thumbnails and sorting, then stream and seek through large videos using native `libsmb2`, with `jcifs-ng` as a compatibility fallback.
 - **LAN SMB discovery** — Scan the local network for SMB servers, sign in once, and open a device's shares without typing a share name; remembered devices appear as quick-connect buttons.
@@ -236,7 +272,7 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 
 | Area | Changes in this fork |
 | --- | --- |
-| Video and photo sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files and photos use Android's system document picker. VR180 photos open in the same SBS renderer as videos. |
+| Video and photo sources | Added an in-app SMB2/SMB3 entry point and network-share browser. Local files and photos use Android's system document picker. VR180 photos open in the same SBS renderer as videos. Bilibili share text is parsed into a video link and played through the existing player, with optional in-app sign-in on Bilibili's own page for member qualities. |
 | SMB browsing | Added server/share/domain/account login, folder navigation, video and photo filtering, thumbnails, newest/oldest sorting, saved profiles, and profile removal. Added automatic LAN discovery with NetBIOS names and device-level sign-in without a share name. Added folder bookmarks that reopen directly from the top of the Open SMB share page. |
 | SMB playback | Added a Media3 SMB data source with buffered random access for playback and seeking. Native `libsmb2` is preferred for throughput; `jcifs-ng` is retained as a fallback. |
 | Credential privacy | Saved SMB passwords are encrypted with AES-GCM using a non-exportable Android Keystore key. Server metadata stays in the app's private storage. |
@@ -263,7 +299,8 @@ The comparison baseline is the upstream `main` branch at [`52673c5`](https://git
 ## Features
 
 - **XREAL One support**: Live head tracking, connection status, factory bias correction, recalibration, adjustable IMU sensitivity, and an IMU tracking toggle that can skip calibration when disabled
-- **Multiple media sources**: Local files, `http(s)` URLs, Android share intents, and built-in SMB2/SMB3 network shares, including VR180 photos
+- **Multiple media sources**: Local files, `http(s)` URLs, Bilibili share links, Android share intents, and built-in SMB2/SMB3 network shares, including VR180 photos
+- **Bilibili share playback**: Paste share text to open the video directly, optionally sign in inside the app for the highest available quality, and reuse the normal player and glasses output
 - **SMB media browser**: Browse folders, show video and photo thumbnails, sort by modification date, and remember multiple server profiles
 - **VR180 photo playback**: Open equirectangular photos in the SBS renderer and use previous/next to step through the folder
 - **SMB device discovery**: Scan the local Wi-Fi/Ethernet network for SMB servers, resolve NetBIOS names, and open a device's shares without entering a share name
@@ -290,6 +327,7 @@ Phone-only playback is intentionally unsupported. The app does not switch the gl
 2. Select a source:
    - tap **Open file** for Android's system file picker;
    - enter an `http(s)` URL and tap **Open URL**;
+   - tap **Open bilibili share**, paste the full share text from the Bilibili app, and tap **Open**;
    - tap **Open SMB share** for a network share;
    - tap **Scan SMB** to discover SMB devices on the local network and sign in to one; or
    - share a video link/file to vr2sbs from another Android app.
@@ -327,6 +365,19 @@ The browser shows folders and supported videos, generates thumbnails when possib
 <p align="center">
   <img src="assets/readme-gifs/vr2sbs-player-1.gif" alt="Browse and open videos from an SMB share" width="36%">
 </p>
+
+## Bilibili share links
+
+Bilibili's share text contains a title and description around the link, which `Open URL` cannot use directly. Tap **Open bilibili share** on the home screen and paste the whole text you copied from the Bilibili app — for example `[VR180 5.7K] VR视角带逛北大教学楼 https://www.bilibili.com/video/BV1Fd4y1N78r/`. vr2sbs removes the surrounding text and extracts the video from full `bilibili.com` links, `b23.tv` short links, or a bare `BV`/`av` id. You can also share a Bilibili link directly to vr2sbs from the Bilibili app or a browser.
+
+Quality selection is automatic:
+
+- Tap **Sign in to Bilibili** to open Bilibili's own login page inside the app. It uses Bilibili's mobile layout, so phone-number + SMS code, account + password, or QR code all work on the phone itself. Signing in is optional but lets vr2sbs request member and VIP qualities; without an account, Bilibili normally limits playback to 480P (or lower for some videos).
+- When you tap **Open**, vr2sbs asks Bilibili for the highest quality available to the signed-in account, then picks the best stream the phone's video and audio decoders can actually play. For example, 8K or AV1 is skipped when the device does not support it.
+- The separate DASH video and audio streams are merged by the player, so play/pause, seeking, the timeline, projection controls, and output to the XREAL glasses work exactly as they do for other videos.
+- If Bilibili requires a higher membership tier, a different region, or payment for a particular video, the app shows Bilibili's error instead of playing it.
+
+The sign-in session is kept on this device in the app's WebView cookie store and is sent only to Bilibili when fetching video information and streams; the app itself does not store your password. Use **Switch Bilibili account** in the dialog to sign in as someone else, or clear the app's data to remove the session. Bilibili's web endpoints are not officially documented and may change without notice.
 
 ## Build and test
 

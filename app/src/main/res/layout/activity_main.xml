@@ -10,139 +10,154 @@
     android:paddingEnd="@dimen/launcher_screen_padding"
     android:paddingBottom="@dimen/launcher_screen_padding">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
-            android:id="@+id/xrealStatusRow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/launcher_status_top_margin"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/xrealStatusIcon"
-                android:layout_width="@dimen/launcher_status_icon_size"
-                android:layout_height="@dimen/launcher_status_icon_size"
-                android:contentDescription="@string/xreal_status_icon_content_description"
-                android:src="@drawable/ic_glasses_status" />
+            <LinearLayout
+                android:id="@+id/xrealStatusRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/launcher_status_top_margin"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <View
-                android:id="@+id/xrealStatusDot"
-                android:layout_width="@dimen/launcher_status_dot_size"
-                android:layout_height="@dimen/launcher_status_dot_size"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_status_indicator_dot" />
+                <ImageView
+                    android:id="@+id/xrealStatusIcon"
+                    android:layout_width="@dimen/launcher_status_icon_size"
+                    android:layout_height="@dimen/launcher_status_icon_size"
+                    android:contentDescription="@string/xreal_status_icon_content_description"
+                    android:src="@drawable/ic_glasses_status" />
+
+                <View
+                    android:id="@+id/xrealStatusDot"
+                    android:layout_width="@dimen/launcher_status_dot_size"
+                    android:layout_height="@dimen/launcher_status_dot_size"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_status_indicator_dot" />
+
+                <TextView
+                    android:id="@+id/xrealStatusText"
+                    style="@style/TextAppearance.Vr2sbs.Launcher.Status"
+                    android:layout_width="@dimen/launcher_status_label_width"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:ellipsize="end"
+                    android:gravity="start|center_vertical"
+                    android:maxLines="1"
+                    android:text="@string/xreal_status_checking" />
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/xrealStatusText"
-                style="@style/TextAppearance.Vr2sbs.Launcher.Status"
-                android:layout_width="@dimen/launcher_status_label_width"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:ellipsize="end"
-                android:gravity="start|center_vertical"
-                android:maxLines="1"
-                android:text="@string/xreal_status_checking" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/statusText"
-            style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/launcher_runtime_status_top_margin"
-            android:gravity="center_horizontal"
-            android:text=""
-            android:visibility="gone" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/urlInputLayout"
-            style="@style/Widget.Vr2sbs.Launcher.Input"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/launcher_section_spacing"
-            app:hintEnabled="false"
-            app:boxBackgroundMode="outline">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/urlInput"
+                android:id="@+id/statusText"
+                style="@style/TextAppearance.Vr2sbs.Launcher.RuntimeStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:hint="@string/hint_url"
-                android:inputType="textUri"
-                android:maxLines="1"
-                android:textColor="@color/launcher_text_primary"
-                android:textColorHint="@color/launcher_text_secondary" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginTop="@dimen/launcher_runtime_status_top_margin"
+                android:gravity="center_horizontal"
+                android:text=""
+                android:visibility="gone" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openUrlButton"
-            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/launcher_section_spacing"
-            android:text="@string/open_url" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openBilibiliShareButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                android:text="@string/open_bilibili_share" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openFileButton"
-            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/launcher_section_spacing"
-            android:text="@string/open_file" />
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/urlInputLayout"
+                style="@style/Widget.Vr2sbs.Launcher.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                app:hintEnabled="false"
+                app:boxBackgroundMode="outline">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openSmbShareButton"
-            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/launcher_section_spacing"
-            android:text="@string/open_smb_share" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/urlInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:hint="@string/hint_url"
+                    android:inputType="textUri"
+                    android:maxLines="1"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textColorHint="@color/launcher_text_secondary" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/scanSmbButton"
-            style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/scan_smb" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openUrlButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                android:text="@string/open_url" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/requirementsHelpButton"
-            style="@style/Widget.Vr2sbs.Launcher.HelpButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/launcher_section_spacing"
-            android:contentDescription="@string/requirements_help_content_description"
-            android:text="@string/requirements_help" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openFileButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                android:text="@string/open_file" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/newReleasesButton"
-            style="@style/Widget.Vr2sbs.Launcher.HelpButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:contentDescription="@string/new_releases_content_description"
-            android:text="@string/new_releases" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openSmbShareButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                android:text="@string/open_smb_share" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/clearSmbCacheButton"
-            style="@style/Widget.Vr2sbs.Launcher.HelpButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="2dp"
-            android:contentDescription="@string/smb_cache_clear_content_description"
-            android:text="@string/smb_cache_clear_button" />
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/scanSmbButton"
+                style="@style/Widget.Vr2sbs.Launcher.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/scan_smb" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/requirementsHelpButton"
+                style="@style/Widget.Vr2sbs.Launcher.HelpButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/launcher_section_spacing"
+                android:contentDescription="@string/requirements_help_content_description"
+                android:text="@string/requirements_help" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/newReleasesButton"
+                style="@style/Widget.Vr2sbs.Launcher.HelpButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:contentDescription="@string/new_releases_content_description"
+                android:text="@string/new_releases" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/clearSmbCacheButton"
+                style="@style/Widget.Vr2sbs.Launcher.HelpButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="2dp"
+                android:contentDescription="@string/smb_cache_clear_content_description"
+                android:text="@string/smb_cache_clear_button" />
+        </LinearLayout>
+    </ScrollView>
 
     <TextView
         style="@style/TextAppearance.Vr2sbs.Launcher.Footer"

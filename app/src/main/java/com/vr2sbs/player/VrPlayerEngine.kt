@@ -10,6 +10,8 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.vr2sbs.source.SourceDescriptor
 import com.vr2sbs.source.SourceType
@@ -40,7 +42,7 @@ class VrPlayerEngine(
         .build()
 
     fun loadSource(source: SourceDescriptor, autoPlay: Boolean, forceReset: Boolean = false) {
-        val sourceKey = source.normalized
+        val sourceKey = source.playbackKey
         if (forceReset || loadedSourceKey != sourceKey) {
             exoPlayer.setMediaSource(createMediaSource(source), true)
             exoPlayer.prepare()
@@ -79,11 +81,12 @@ class VrPlayerEngine(
         exoPlayer.release()
     }
 
-    private fun createMediaSource(source: SourceDescriptor): ProgressiveMediaSource {
+    private fun createMediaSource(source: SourceDescriptor): MediaSource {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(8_000)
             .setReadTimeoutMs(15_000)
             .setAllowCrossProtocolRedirects(true)
+            .setDefaultRequestProperties(source.httpHeaders)
         val dataSourceFactory: DataSource.Factory = when (source.type) {
             SourceType.SMB_URI -> {
                 val profileId = requireNotNull(source.profileId) { "SMB source is missing its profile" }
@@ -93,8 +96,17 @@ class VrPlayerEngine(
             SourceType.LOCAL_URI,
             SourceType.HTTP_URL -> DefaultDataSource.Factory(appContext, httpFactory)
         }
-        val mediaItem = MediaItem.fromUri(Uri.parse(source.normalized))
-        return ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+        val progressiveFactory = ProgressiveMediaSource.Factory(dataSourceFactory)
+        val videoSource = progressiveFactory.createMediaSource(
+            MediaItem.fromUri(Uri.parse(source.playbackUri))
+        )
+        val audioUri = source.audioStreamUri
+        if (audioUri.isNullOrBlank()) {
+            return videoSource
+        }
+        // Bilibili serves DASH video and audio as separate streams.
+        val audioSource = progressiveFactory.createMediaSource(MediaItem.fromUri(Uri.parse(audioUri)))
+        return MergingMediaSource(videoSource, audioSource)
     }
 
     companion object {

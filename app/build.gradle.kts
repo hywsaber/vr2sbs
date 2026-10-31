@@ -5,8 +5,8 @@ plugins {
     id("com.github.triplet.play")
 }
 
-val defaultVersionName = "0.2.5"
-val defaultVersionCode = 5
+val defaultVersionName = "0.3.0"
+val defaultVersionCode = 6
 
 val releaseVersionName = System.getenv("VR2XR_VERSION_NAME")?.trim()?.takeIf { it.isNotEmpty() }
 val releaseVersionCodeRaw = System.getenv("VR2XR_VERSION_CODE")?.trim()?.takeIf { it.isNotEmpty() }
@@ -147,6 +147,7 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.4.1")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }

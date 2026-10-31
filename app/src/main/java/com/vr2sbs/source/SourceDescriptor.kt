@@ -12,11 +12,30 @@ data class SourceDescriptor(
     val displayName: String? = null,
     val profileId: String? = null,
     val mediaKind: SourceMediaKind = SourceMediaKind.VIDEO,
-    val playlist: List<SourcePlaylistItem> = emptyList()
+    val playlist: List<SourcePlaylistItem> = emptyList(),
+    /** Actual media URL when it differs from the normalized page URL (for example a Bilibili DASH stream). */
+    val streamUri: String? = null,
+    /** Separate audio URL for sources served as split DASH video/audio tracks. */
+    val audioStreamUri: String? = null,
+    /** HTTP headers required by the stream host, such as Referer and Cookie. */
+    val httpHeaders: Map<String, String> = emptyMap()
 ) : Parcelable {
     val isImage: Boolean get() = mediaKind == SourceMediaKind.IMAGE
 
-    fun toUri(): Uri = Uri.parse(normalized)
+    val playbackUri: String get() = streamUri ?: normalized
+
+    /**
+     * Identifies the media that is currently loaded. Stream URLs can change for the same
+     * page, so playback decisions use this instead of [normalized].
+     */
+    val playbackKey: String
+        get() = buildString {
+            append(playbackUri)
+            audioStreamUri?.takeIf { it.isNotBlank() }?.let { append('|').append(it) }
+            if (httpHeaders.isNotEmpty()) append('|').append(httpHeaders.hashCode())
+        }
+
+    fun toUri(): Uri = Uri.parse(playbackUri)
 }
 
 /** One photo in the current folder, used for previous/next navigation. */
